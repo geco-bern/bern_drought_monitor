@@ -211,56 +211,38 @@ latest_href <- pick_tif_asset(latest_feature, layer = vhi_layer)
 latest_crop <- crop_to_aoi_from_url(latest_href)
 
 # Save the cropped GeoTIFF
+# writeRaster(
+  # latest_crop,
+  #file.path(out_dir, paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
+  #overwrite = TRUE
+# )
+
+# ---------------------------
+# 3) Save processed data for vignette
+# ---------------------------
+
+dir.create("data", showWarnings = FALSE)
+
+# Save cropped raster
 writeRaster(
   latest_crop,
-  file.path(out_dir, paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
+  file.path("data", paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
   overwrite = TRUE
 )
 
-# ---------------------------
-# 3) Visualize
-# ---------------------------
-fig_dir <- "figures/swissEO"
-dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
-
+# Save plot-ready data frame
 plot_df <- raster_to_df(
   latest_crop,
   paste0(latest_date, " (latest valid available)")
 )
 
-p_map <- ggplot(plot_df) +
-  geom_raster(aes(x = x, y = y, fill = vhi)) +
-  coord_equal() +
-  scale_fill_viridis_c(
-    name = "VHI",
-    limits = c(0, 100),
-    oob = squish,
-    na.value = "transparent"
-  ) +
-  labs(
-    title = "swissEO VHI around Bern",
-    subtitle = paste0("Latest valid forest VHI dataset: ", latest_date),
-    x = "LV95",
-    y = "LV95"
-  ) +
-  theme_minimal()
-
-print(p_map)
-
-ggsave(
-  filename = file.path(
-    fig_dir,
-    paste0("swisseo_vhi_bern_latest.png")
-  ),
-  plot = p_map,
-  width = 8,
-  height = 6,
-  dpi = 200
+write.csv(
+  plot_df,
+  file.path("data", "swisseo_vhi_bern_plot_data.csv"),
+  row.names = FALSE
 )
 
-# ---------------------------
-# 4) Print simple summary statistics
-# ---------------------------
+# Save summary statistics
 stats <- plot_df |>
   summarise(
     date = unique(date),
@@ -270,10 +252,8 @@ stats <- plot_df |>
     max_vhi = max(vhi, na.rm = TRUE)
   )
 
-print(stats)
-
 write.csv(
   stats,
-  file.path(out_dir, paste0("swisseo_vhi_bern_stats_", latest_date, ".csv")),
+  file.path("data", "swisseo_vhi_bern_stats.csv"),
   row.names = FALSE
 )

@@ -1,12 +1,30 @@
 ---
 title: "Current drought situation in Switzerland"
-author: "GECO"
+author: "Benjamin Stocker & Sascha Friedli"
 date: today
 format:
   html:
     toc: true
     code-fold: true
 ---
+
+```{r}
+#| label: setup
+#| include: false
+
+library(here)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+current_year <- 2026
+
+meteo_pcwd <- read_csv(here("data", "Bern_pcwd_daily.csv"))
+
+vhi_plot_data <- read_csv(here("data", "swisseo_vhi_bern_plot_data.csv"))
+vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
+```
 
 # Drought Update Switzerland – June 2026
 
@@ -28,7 +46,44 @@ In the Bern/Zollikofen region, the year 2026 started with relatively wet conditi
 
 By mid-June, the PCWD dropped below zero, meaning that cumulative evapotranspiration since the beginning of the year exceeded cumulative precipitation. This marks a transition from a water surplus to a water deficit situation and suggests increasing drought stress on vegetation and ecosystems.
 
-![](../figures/meteo/pcwd_bern_zollikofen_mean_vs_current.png)
+```{r}
+#| label: fig-pcwd
+#| fig-cap: "PCWD Bern/Zollikofen."
+#| fig-width: 8
+#| fig-height: 5
+
+pcwd_mean <- meteo_pcwd |>
+  filter(year < current_year) |>
+  group_by(doy) |>
+  summarise(
+    PCWD_mean = mean(PCWD, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+pcwd_current <- meteo_pcwd |>
+  filter(year == current_year)
+
+ggplot() +
+  geom_line(
+    data = pcwd_mean,
+    aes(x = doy, y = PCWD_mean),
+    colour = "black",
+    linewidth = 1
+  ) +
+  geom_line(
+    data = pcwd_current,
+    aes(x = doy, y = PCWD),
+    colour = "red",
+    linewidth = 1.2
+  ) +
+  labs(
+    x = "Day of year",
+    y = "PCWD = cumulative P - PET [mm]",
+    title = "PCWD Bern/Zollikofen",
+    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+  ) +
+  theme_bw()
+```
 
 ### Climatic water deficit
 
@@ -38,7 +93,45 @@ By early summer, the 2026 trajectory had already fallen below the historical mea
 
 By mid-June, the cumulative water deficit had reached approximately −150 mm, substantially below the seasonal average of around −50 mm for the same time of year. This suggests that vegetation was exposed to considerably drier conditions than would normally be expected, providing a likely explanation for the reduced vegetation health observed in the SwissEO VHI data.
 
-![](../figures/meteo/cwd_bern_zollikofen_mean_vs_current.png)
+```{r}
+#| label: fig-cwd
+#| fig-cap: "Climatic water deficit Bern/Zollikofen."
+#| fig-width: 8
+#| fig-height: 5
+
+cwd_mean <- meteo_pcwd |>
+  filter(year < current_year) |>
+  group_by(doy) |>
+  summarise(
+    CWD_mean = mean(CWD, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+cwd_current <- meteo_pcwd |>
+  filter(year == current_year)
+
+ggplot() +
+  geom_line(
+    data = cwd_mean,
+    aes(x = doy, y = CWD_mean),
+    colour = "black",
+    linewidth = 1
+  ) +
+  geom_line(
+    data = cwd_current,
+    aes(x = doy, y = CWD),
+    colour = "red",
+    linewidth = 1.2
+  ) +
+  labs(
+    x = "Day of year",
+    y = "CWD = climatic water deficit [mm]",
+    title = "Climatic water deficit Bern/Zollikofen",
+    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+  ) +
+  theme_bw()
+```
+
 
 ## 2. Soil moisture
 
@@ -67,9 +160,40 @@ On the following website there is a more detailed break down of the current tree
 
 The SwissEO Vegetation Health Index (VHI) combines Sentinel-2 vegetation observations with temperature information from MeteoSwiss to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
 
-The map below shows the most recent VHI data available for the Bern region (3 June 2026). Forested areas are generally characterized by low to moderate VHI values, with a median value of 31 across the study area. This suggests that vegetation was experiencing noticeable stress at the beginning of June. With the warm current temperature the VHI is likely to further decrease over the coming days 
+The map below shows the most recent VHI data available for the Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
-![](../figures/swissEO/swisseo_vhi_bern_latest.png)
+```{r}
+#| label: fig-vhi
+#| fig-cap: "Latest swissEO Vegetation Health Index around Bern."
+#| fig-width: 8
+#| fig-height: 6
+
+ggplot(vhi_plot_data) +
+  geom_raster(aes(x = x, y = y, fill = vhi)) +
+  coord_equal() +
+  scale_fill_viridis_c(
+    name = "VHI",
+    limits = c(0, 100),
+    oob = scales::squish,
+    na.value = "transparent"
+  ) +
+  labs(
+    title = "swissEO VHI around Bern",
+    subtitle = paste0("Latest valid forest VHI dataset: ", unique(vhi_stats$date)),
+    x = "LV95",
+    y = "LV95"
+  ) +
+  theme_minimal()
+```
+
+### Overview statistics
+```{r}
+#| label: tbl-vhi-stats
+#| echo: false
+
+vhi_stats |>
+  mutate(across(where(is.numeric), ~ round(.x, 1)))
+```
 
 ## 5. Current drought status summary
 
