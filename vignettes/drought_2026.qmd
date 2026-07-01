@@ -17,6 +17,8 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(leaflet)
+library(terra)
 
 current_year <- 2026
 
@@ -36,19 +38,21 @@ The figures below summarize the current state of drought stress around Bern and 
 
 ## 1. Meteorological drought
 
-To assess current drought conditions, we compare cumulative precipitation minus potential evapotranspiration (PCWD) in 2026 against the historical seasonal cycle at the Meteo Swiss station Bern/Zollikofen. 
+To assess current drought conditions, we compare potential cumulative water deficit (PCWD) in 2026 against the historical seasonal cycle at the MeteoSwiss station Bern/Zollikofen.
 
-### PCWD
+PCWD was calculated from daily precipitation minus potential evapotranspiration using the `cwd::cwd()` algorithm. The primary estimate uses Priestley–Taylor PET based on estimated net radiation. As a sensitivity analysis, we additionally calculate PCWD using FAO56 reference evapotranspiration.
 
-The Potential Climatic Water Deficit (PCWD) provides a simple indicator of the balance between water supply and atmospheric demand. It is calculated as the cumulative difference between precipitation (P) and potential evapotranspiration (PET). Positive values indicate that precipitation has exceeded evaporative demand, while declining values indicate increasing water stress.
+### Potential cumulative water deficit (PCWD)
 
-In the Bern/Zollikofen region, the year 2026 started with relatively wet conditions, leading to a rapid accumulation of water surplus during winter and early spring. However, from April onwards, precipitation became increasingly insufficient to offset evaporative demand. As temperatures rose and atmospheric demand increased, the accumulated surplus was steadily depleted.
+::: {.callout-note}
+## Potential cumulative water deficit
 
-By mid-June, the PCWD dropped below zero, meaning that cumulative evapotranspiration since the beginning of the year exceeded cumulative precipitation. This marks a transition from a water surplus to a water deficit situation and suggests increasing drought stress on vegetation and ecosystems.
+Potential cumulative water deficit (PCWD) describes the accumulated atmospheric water demand that is not compensated by precipitation. It is calculated from the daily water balance between precipitation and potential evapotranspiration (PET). Increasing PCWD values indicate increasing drought stress, while decreases indicate periods where precipitation partly or fully compensates the accumulated deficit.
+:::
 
 ```{r}
 #| label: fig-pcwd
-#| fig-cap: "PCWD Bern/Zollikofen."
+#| fig-cap: "Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -56,82 +60,80 @@ pcwd_mean <- meteo_pcwd |>
   filter(year < current_year) |>
   group_by(doy) |>
   summarise(
-    PCWD_mean = mean(PCWD, na.rm = TRUE),
+    PCWD_PT_mean = mean(PCWD_PT, na.rm = TRUE),
+    PCWD_FAO_mean = mean(PCWD_FAO, na.rm = TRUE),
     .groups = "drop"
   )
 
 pcwd_current <- meteo_pcwd |>
-  filter(year == current_year)
+  filter(year == current_year,
+         date < max(date, na.rm = TRUE))
 
-ggplot() +
+p_pt <- ggplot() +
+  geom_line(
+    data = meteo_pcwd |> filter(year < current_year),
+    aes(x = doy, y = PCWD_PT, group = year),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
+  ) +
   geom_line(
     data = pcwd_mean,
-    aes(x = doy, y = PCWD_mean),
+    aes(x = doy, y = PCWD_PT_mean),
     colour = "black",
     linewidth = 1
   ) +
   geom_line(
     data = pcwd_current,
-    aes(x = doy, y = PCWD),
+    aes(x = doy, y = PCWD_PT),
     colour = "red",
     linewidth = 1.2
   ) +
   labs(
     x = "Day of year",
-    y = "PCWD = cumulative P - PET [mm]",
-    title = "PCWD Bern/Zollikofen",
-    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+    y = "PCWD [mm]",
+    title = "PCWD Bern/Zollikofen – Priestley–Taylor",
+    subtitle = paste0(current_year, " compared to previous years")
   ) +
   theme_bw()
+p_pt
 ```
 
-### Climatic water deficit
+The PCWD for the current year is substantially higher than observed at the same time of year during the previous 15 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
 
-The climatic water deficit (CWD) for 2026 diverged markedly from the long-term seasonal cycle. While conditions at the beginning of the year were close to average, the deficit started to increase rapidly during spring as precipitation failed to keep pace with atmospheric water demand.
-
-By early summer, the 2026 trajectory had already fallen below the historical mean, indicating that evapotranspiration was consuming available water faster than it was replenished by rainfall. Several short precipitation events temporarily reduced the deficit, but these interruptions were insufficient to reverse the overall trend.
-
-By mid-June, the cumulative water deficit had reached approximately −150 mm, substantially below the seasonal average of around −50 mm for the same time of year. This suggests that vegetation was exposed to considerably drier conditions than would normally be expected, providing a likely explanation for the reduced vegetation health observed in the SwissEO VHI data.
 
 ```{r}
-#| label: fig-cwd
-#| fig-cap: "Climatic water deficit Bern/Zollikofen."
-#| fig-width: 8
-#| fig-height: 5
-
-cwd_mean <- meteo_pcwd |>
-  filter(year < current_year) |>
-  group_by(doy) |>
-  summarise(
-    CWD_mean = mean(CWD, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-cwd_current <- meteo_pcwd |>
-  filter(year == current_year)
-
-ggplot() +
+p_fao <- ggplot() +
   geom_line(
-    data = cwd_mean,
-    aes(x = doy, y = CWD_mean),
+    data = meteo_pcwd |> filter(year < current_year),
+    aes(x = doy, y = PCWD_FAO, group = year),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
+  ) +
+  geom_line(
+    data = pcwd_mean,
+    aes(x = doy, y = PCWD_FAO_mean),
     colour = "black",
     linewidth = 1
   ) +
   geom_line(
-    data = cwd_current,
-    aes(x = doy, y = CWD),
-    colour = "red",
+    data = pcwd_current,
+    aes(x = doy, y = PCWD_FAO),
+    colour = "orange",
     linewidth = 1.2
   ) +
   labs(
     x = "Day of year",
-    y = "CWD = climatic water deficit [mm]",
-    title = "Climatic water deficit Bern/Zollikofen",
-    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+    y = "PCWD [mm]",
+    title = "PCWD Bern/Zollikofen – FAO56",
+    subtitle = paste0(current_year, " compared to previous years")
   ) +
   theme_bw()
+p_fao
 ```
 
+The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
 
 ## 2. Soil moisture
 
@@ -163,28 +165,79 @@ The SwissEO Vegetation Health Index (VHI) combines Sentinel-2 vegetation observa
 The map below shows the most recent VHI data available for the Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
 ```{r}
-#| label: fig-vhi
+#| label: map-vhi
 #| fig-cap: "Latest swissEO Vegetation Health Index around Bern."
-#| fig-width: 8
-#| fig-height: 6
 
-ggplot(vhi_plot_data) +
-  geom_raster(aes(x = x, y = y, fill = vhi)) +
-  coord_equal() +
-  scale_fill_viridis_c(
-    name = "VHI",
-    limits = c(0, 100),
-    oob = scales::squish,
-    na.value = "transparent"
-  ) +
-  labs(
-    title = "swissEO VHI around Bern",
-    subtitle = paste0("Latest valid forest VHI dataset: ", unique(vhi_stats$date)),
-    x = "LV95",
-    y = "LV95"
-  ) +
-  theme_minimal()
+# VHI auf gültigen Bereich begrenzen
+vhi_plot_data <- vhi_plot_data |>
+  mutate(vhi = ifelse(vhi < 0 | vhi > 100, NA, vhi))
+
+# Aus x/y/vhi wieder ein Raster machen
+vhi_rast <- terra::rast(
+  vhi_plot_data |> select(x, y, vhi),
+  type = "xyz",
+  crs = "EPSG:2056"
+)
+
+# Für leaflet nach WGS84 transformieren
+vhi_rast_wgs84 <- terra::project(vhi_rast, "EPSG:4326", method = "near")
+
+# Klassenfarben gemäss swissEO
+vhi_cols <- c(
+  "#b56a29", # Extremely stressed
+  "#ce8540", # Very stressed
+  "#f5cd85", # Stressed
+  "#fff5ba", # Slightly stressed
+  "#cbffca", # Normal
+  "#52bd9f", # Good
+  "#0470b0"  # Excellent
+)
+
+vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
+
+pal_vhi <- colorBin(
+  palette = vhi_cols,
+  domain = terra::values(vhi_rast_wgs84),
+  bins = vhi_bins,
+  na.color = "transparent",
+  right = FALSE
+)
+
+leaflet() |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addRasterImage(
+    vhi_rast_wgs84,
+    colors = pal_vhi,
+    opacity = 0.75,
+    group = "VHI"
+  ) |>
+  addLayersControl(
+    baseGroups = c("World Imagery", "World Topo"),
+    overlayGroups = c("VHI"),
+    position = "topleft",
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addLegend(
+    position = "bottomright",
+    colors = vhi_cols,
+    labels = c(
+      "0–9: Extremely stressed",
+      "10–19: Very stressed",
+      "20–29: Stressed",
+      "30–39: Slightly stressed",
+      "40–49: Normal",
+      "50–59: Good",
+      "60–100: Excellent"
+    ),
+    title = "VHI"
+  ) |>
+  addControl(
+    html = "© swisstopo, Contains modified Copernicus Sentinel data 2026",
+    position = "bottomleft"
+  )
 ```
+
 
 ### Overview statistics
 ```{r}
