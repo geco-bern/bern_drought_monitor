@@ -187,17 +187,12 @@ source(here::here("R/02_swissEOVHI.R"))
 
 Review and update:
 
-```text
-vignettes/drought_2026.qmd
+```r
+quarto::quarto_render("vignettes/drought_2026.qmd")
 ```
 
 The Quarto document automatically generates all figures from the processed datasets stored in `data/`.
 
-### Step 5
-
-```r
-quarto::quarto_render("vignettes/drought_2026.qmd")
-```
 
 ---
 

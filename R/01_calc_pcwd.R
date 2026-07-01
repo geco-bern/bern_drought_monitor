@@ -58,6 +58,7 @@ meteo_daily <- meteo_daily_raw |>
     year = year(date),
     doy = yday(date),
 
+    # please refer to a source (document doi or url) where these variables are described.
     P = as.numeric(rre150d0),
     Tmean = as.numeric(tre200d0),
     Tmin = as.numeric(tre200dn),
@@ -66,6 +67,7 @@ meteo_daily <- meteo_daily_raw |>
     wind = as.numeric(fkl010d0),
     Rs = as.numeric(gre000d0) * 86400 / 1e6
   ) |>
+  # xxx Achtung: Filter sind gefährlich. Versuche möglichst zu vermeiden und falls nötig gapfilling zu machen.
   filter(
     date >= as.Date("1981-01-01"),
     !is.na(date),
@@ -79,6 +81,8 @@ meteo_daily <- meteo_daily_raw |>
   )
 
 # ---- calculate PET ----
+# xxx beni: use function cwd::pet() here instead (may additionally do it with
+# calc_pet_fao56_daily for sensitivity analysis.)
 
 source("R/calc_pet.R")
 meteo_daily <- meteo_daily |>
@@ -101,6 +105,8 @@ meteo_daily <- meteo_daily |>
 meteo_pcwd <- meteo_daily |>
   group_by(year) |>
   arrange(date, .by_group = TRUE) |>
+
+  # xxx beni: please use cwd::cwd() here
   mutate(
     water_balance = P - PET,
 
