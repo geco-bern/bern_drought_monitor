@@ -1,4 +1,0 @@
-template:
-  package: gecotemplate
-  params:
-    mathjax: true
