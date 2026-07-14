@@ -1,5 +1,5 @@
 ---
-title: "Current drought situation in Switzerland"
+title: "Current drought situation in Bern, Switzerland"
 author: "Benjamin Stocker & Sascha Friedli"
 date: today
 format:
@@ -17,6 +17,8 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(leaflet)
+library(terra)
 
 current_year <- 2026
 
@@ -26,29 +28,32 @@ vhi_plot_data <- read_csv(here("data", "swisseo_vhi_bern_plot_data.csv"))
 vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
 ```
 
-# Drought Update Switzerland – June 2026
+## Overview
 
 Drought conditions have intensified across parts of Switzerland during spring and early summer 2026. A combination of below-average precipitation and increasing atmospheric evaporative demand has lead to signals of increasing drought stress since April.
 
-This update combines several complementary indicators to assess the current drought situation: climatic water deficit derived from meteorological observations, soil moisture monitoring data provided by SwissSMEX, tree water deficit measurements from the TreeNet monitoring network and satellite-based vegetation health metrics from swissEO. Together, these datasets provide insights into how the ongoing dry conditions affect the atmosphere, vegetation, and forest ecosystems.
+This update combines several complementary indicators to assess the current drought situation: the potential cumulative water deficit derived from meteorological observations and satellite-based vegetation health metrics from swisstopo. Together, this provides insights into how the ongoing dry conditions affect the atmosphere, vegetation, and forest ecosystems.
 
-The figures below summarize the current state of drought stress around Bern and across Switzerland as of mid-June 2026.
+The figures below summarize the current state of drought stress around Bern and across Switzerland as of today (see date in header).
 
-## 1. Meteorological drought
+## Meteorological drought
 
-To assess current drought conditions, we compare cumulative precipitation minus potential evapotranspiration (PCWD) in 2026 against the historical seasonal cycle at the Meteo Swiss station Bern/Zollikofen. 
+To assess current meteorological drought conditions, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
 
-### PCWD
+PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The primary estimate uses Priestley–Taylor PET based on estimated net radiation. As a sensitivity analysis, we additionally calculate PCWD using FAO56 reference evapotranspiration based on Penman-Monteith PET (not shown, but yielding consistent results).
 
-The Potential Climatic Water Deficit (PCWD) provides a simple indicator of the balance between water supply and atmospheric demand. It is calculated as the cumulative difference between precipitation (P) and potential evapotranspiration (PET). Positive values indicate that precipitation has exceeded evaporative demand, while declining values indicate increasing water stress.
+### Potential cumulative water deficit (PCWD)
 
-In the Bern/Zollikofen region, the year 2026 started with relatively wet conditions, leading to a rapid accumulation of water surplus during winter and early spring. However, from April onwards, precipitation became increasingly insufficient to offset evaporative demand. As temperatures rose and atmospheric demand increased, the accumulated surplus was steadily depleted.
+::: {.callout-note}
+## Explainer: potential cumulative water deficit
 
-By mid-June, the PCWD dropped below zero, meaning that cumulative evapotranspiration since the beginning of the year exceeded cumulative precipitation. This marks a transition from a water surplus to a water deficit situation and suggests increasing drought stress on vegetation and ecosystems.
+Potential cumulative water deficit (PCWD) describes the accumulated atmospheric water demand that is not compensated by precipitation. It is calculated from the daily water balance between precipitation and potential evapotranspiration (PET). Increasing PCWD values indicate increasing drought stress, while decreases indicate periods where precipitation partly or fully compensates the accumulated deficit.
+
+:::
 
 ```{r}
 #| label: fig-pcwd
-#| fig-cap: "PCWD Bern/Zollikofen."
+#| fig-cap: "Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -56,92 +61,130 @@ pcwd_mean <- meteo_pcwd |>
   filter(year < current_year) |>
   group_by(doy) |>
   summarise(
-    PCWD_mean = mean(PCWD, na.rm = TRUE),
+    PCWD_PT_mean = mean(PCWD_PT, na.rm = TRUE),
+    PCWD_FAO_mean = mean(PCWD_FAO, na.rm = TRUE),
     .groups = "drop"
   )
 
 pcwd_current <- meteo_pcwd |>
-  filter(year == current_year)
+  filter(
+    year == current_year,
+    date < max(date, na.rm = TRUE)
+    )
 
-ggplot() +
+highlight_years <- c(current_year, 2022, 2018, 2023)
+pcwd_year_range <- range(meteo_pcwd$year, na.rm = TRUE)
+pcwd_highlight <- bind_rows(
+  meteo_pcwd |> filter(year %in% c(2022, 2018, 2023)),
+  pcwd_current
+) |>
+  mutate(year = factor(year, levels = highlight_years))
+
+highlight_colours <- setNames(
+  c("#D73027", "#4575B4", "#E69F00", "#009E73"),
+  as.character(highlight_years)
+)
+
+p_pt <- ggplot() +
   geom_line(
-    data = pcwd_mean,
-    aes(x = doy, y = PCWD_mean),
-    colour = "black",
-    linewidth = 1
+    data = meteo_pcwd |> filter(!year %in% highlight_years),
+    aes(x = doy, y = PCWD_PT, group = year),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
   ) +
+  # geom_line(
+  #   data = pcwd_mean,
+  #   aes(x = doy, y = PCWD_PT_mean),
+  #   colour = "black",
+  #   linewidth = 1
+  # ) +
   geom_line(
-    data = pcwd_current,
-    aes(x = doy, y = PCWD),
-    colour = "red",
-    linewidth = 1.2
+    data = pcwd_highlight,
+    aes(x = doy, y = PCWD_PT, colour = year, group = year),
+    linewidth = 0.5
+  ) +
+  scale_colour_manual(
+    values = highlight_colours,
+    breaks = as.character(highlight_years),
+    name = "Year"
   ) +
   labs(
     x = "Day of year",
-    y = "PCWD = cumulative P - PET [mm]",
-    title = "PCWD Bern/Zollikofen",
-    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+    y = "PCWD (mm)",
+    title = "Potential cumulative water deficit",
+    subtitle = paste0(
+      "Bern-Zollikofen, Priestley-Taylor PET (",
+      pcwd_year_range[1], "–", pcwd_year_range[2], ")"
+    )
   ) +
   theme_bw()
+p_pt
+
+ggsave(
+  here("fig/pcwd_pt.pdf"),
+  width = 8, 
+  height = 5
+)
 ```
 
-### Climatic water deficit
+The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
 
-The climatic water deficit (CWD) for 2026 diverged markedly from the long-term seasonal cycle. While conditions at the beginning of the year were close to average, the deficit started to increase rapidly during spring as precipitation failed to keep pace with atmospheric water demand.
-
-By early summer, the 2026 trajectory had already fallen below the historical mean, indicating that evapotranspiration was consuming available water faster than it was replenished by rainfall. Several short precipitation events temporarily reduced the deficit, but these interruptions were insufficient to reverse the overall trend.
-
-By mid-June, the cumulative water deficit had reached approximately −150 mm, substantially below the seasonal average of around −50 mm for the same time of year. This suggests that vegetation was exposed to considerably drier conditions than would normally be expected, providing a likely explanation for the reduced vegetation health observed in the SwissEO VHI data.
-
+<!-- 
 ```{r}
-#| label: fig-cwd
-#| fig-cap: "Climatic water deficit Bern/Zollikofen."
-#| fig-width: 8
-#| fig-height: 5
-
-cwd_mean <- meteo_pcwd |>
-  filter(year < current_year) |>
-  group_by(doy) |>
-  summarise(
-    CWD_mean = mean(CWD, na.rm = TRUE),
-    .groups = "drop"
-  )
-
-cwd_current <- meteo_pcwd |>
-  filter(year == current_year)
-
-ggplot() +
+p_fao <- ggplot() +
   geom_line(
-    data = cwd_mean,
-    aes(x = doy, y = CWD_mean),
-    colour = "black",
-    linewidth = 1
+    data = meteo_pcwd |> filter(!year %in% highlight_years),
+    aes(x = doy, y = PCWD_FAO, group = year),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
   ) +
+  # geom_line(
+  #   data = pcwd_mean,
+  #   aes(x = doy, y = PCWD_FAO_mean),
+  #   colour = "black",
+  #   linewidth = 1
+  # ) +
   geom_line(
-    data = cwd_current,
-    aes(x = doy, y = CWD),
-    colour = "red",
-    linewidth = 1.2
+    data = pcwd_highlight,
+    aes(x = doy, y = PCWD_FAO, colour = year, group = year),
+    linewidth = 0.5
+  ) +
+  scale_colour_manual(
+    values = highlight_colours,
+    breaks = as.character(highlight_years),
+    name = "Year"
   ) +
   labs(
     x = "Day of year",
-    y = "CWD = climatic water deficit [mm]",
-    title = "Climatic water deficit Bern/Zollikofen",
-    subtitle = paste0(current_year, " compared to mean seasonal cycle")
+    y = "PCWD (mm)",
+    title = "Potential cumulative water deficit",
+    subtitle = paste0(
+      "Bern-Zollikofen, FAO56 PET (",
+      pcwd_year_range[1],
+      "–",
+      pcwd_year_range[2],
+      ")"
+    )
   ) +
   theme_bw()
-```
 
+p_fao
+``` 
+-->
 
-## 2. Soil moisture
+The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
+
+<!-- ## 2. Soil moisture
 
 The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
 
 [Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
 
-For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
+For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further. -->
 
-## 3. Tree water deficit
+<!-- ## 3. Tree water deficit
 
 TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
 
@@ -149,42 +192,93 @@ Currently, the highest proportions of trees classified as experiencing high or v
 
 Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
 
-![TreeNet TWD Overview](https://treenet.info/content/uploads/Drought_Indicators_norm.jpg)
+![TreeNet TWD Overview](https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg)
 
 On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
 
-[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
+[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/) -->
 
 
-## 4. Vegetation Health Index (VHI)
+## Vegetation Health Index (VHI)
 
-The SwissEO Vegetation Health Index (VHI) combines Sentinel-2 vegetation observations with temperature information from MeteoSwiss to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
+The [SwissEO Vegetation Health Index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) combines Sentinel-2-derived Normalised Difference Vegetation Index (NDVI) observations with with land surface temperature data to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
 
-The map below shows the most recent VHI data available for the Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
+The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
 ```{r}
-#| label: fig-vhi
+#| label: map-vhi
 #| fig-cap: "Latest swissEO Vegetation Health Index around Bern."
-#| fig-width: 8
-#| fig-height: 6
 
-ggplot(vhi_plot_data) +
-  geom_raster(aes(x = x, y = y, fill = vhi)) +
-  coord_equal() +
-  scale_fill_viridis_c(
-    name = "VHI",
-    limits = c(0, 100),
-    oob = scales::squish,
-    na.value = "transparent"
-  ) +
-  labs(
-    title = "swissEO VHI around Bern",
-    subtitle = paste0("Latest valid forest VHI dataset: ", unique(vhi_stats$date)),
-    x = "LV95",
-    y = "LV95"
-  ) +
-  theme_minimal()
+# VHI auf gültigen Bereich begrenzen
+vhi_plot_data <- vhi_plot_data |>
+  mutate(vhi = ifelse(vhi < 0 | vhi > 100, NA, vhi))
+
+# Aus x/y/vhi wieder ein Raster machen
+vhi_rast <- terra::rast(
+  vhi_plot_data |> select(x, y, vhi),
+  type = "xyz",
+  crs = "EPSG:2056"
+)
+
+# Für leaflet nach WGS84 transformieren
+vhi_rast_wgs84 <- terra::project(vhi_rast, "EPSG:4326", method = "near")
+
+# Klassenfarben gemäss swissEO
+vhi_cols <- c(
+  "#b56a29", # Extremely stressed
+  "#ce8540", # Very stressed
+  "#f5cd85", # Stressed
+  "#fff5ba", # Slightly stressed
+  "#cbffca", # Normal
+  "#52bd9f", # Good
+  "#0470b0"  # Excellent
+)
+
+vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
+
+pal_vhi <- colorBin(
+  palette = vhi_cols,
+  domain = terra::values(vhi_rast_wgs84),
+  bins = vhi_bins,
+  na.color = "transparent",
+  right = FALSE
+)
+
+leaflet() |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addRasterImage(
+    vhi_rast_wgs84,
+    colors = pal_vhi,
+    opacity = 0.75,
+    group = "VHI"
+  ) |>
+  addLayersControl(
+    baseGroups = c("World Imagery", "World Topo"),
+    overlayGroups = c("VHI"),
+    position = "topleft",
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addLegend(
+    position = "bottomright",
+    colors = vhi_cols,
+    labels = c(
+      "0–9: Extremely stressed",
+      "10–19: Very stressed",
+      "20–29: Stressed",
+      "30–39: Slightly stressed",
+      "40–49: Normal",
+      "50–59: Good",
+      "60–100: Excellent"
+    ),
+    title = "VHI"
+  ) |>
+  addControl(
+    html = "© swisstopo, Contains modified Copernicus Sentinel data 2026",
+    position = "bottomleft"
+  )
 ```
+
 
 ### Overview statistics
 ```{r}
@@ -195,11 +289,10 @@ vhi_stats |>
   mutate(across(where(is.numeric), ~ round(.x, 1)))
 ```
 
-## 5. Current drought status summary
+<!-- ## 5. Current drought status summary
 
-Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability. The climatic water deficit in Bern/Zollikofen has already fallen well below the long-term seasonal cycle, indicating that evaporative demand has exceeded precipitation for a prolonged period.
+Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
 
 This signal is also reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, TreeNet observations reveal that many tree species across Switzerland are already experiencing measurable water deficits, with particularly pronounced stress in Scots pine, silver fir, ash and downy oak.
 
-While current conditions are not yet comparable to the most extreme drought years on record, the combination of declining climatic water balance, reduced vegetation health and increasing tree water deficits suggests that ecosystems are entering a period of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts a persistent high pressure system over central Europe with maximal daily temperatures ranging from 25-30 degrees Celsius. This will likely further increase drought stress over the coming days. 
-
+Regarding PCWD the current conditions are among the most exceptional on the record. The vegetation health index shows that in certain regions around Bern are in a stressed to very stressed state. Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts another heatwave over central Europe with maximal daily temperatures ranging from 30-35 degrees Celsius. This will likely further increase drought stress over the coming days.  -->

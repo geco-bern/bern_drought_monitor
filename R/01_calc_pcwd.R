@@ -85,6 +85,7 @@ meteo_daily <- meteo_daily_raw |>
 # calc_pet_fao56_daily for sensitivity analysis.)
 
 source("R/calc_pet.R")
+
 meteo_daily <- meteo_daily |>
   mutate(
     PET = calc_pet_fao56_daily(
