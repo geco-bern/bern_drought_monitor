@@ -58,7 +58,7 @@ meteo_daily <- meteo_daily_raw |>
     year = year(date),
     doy = yday(date),
 
-    # please refer to a source (document doi or url) where these variables are described.
+    # xxx beni: please refer to a source (document doi or url) where these variables are described.
     P = as.numeric(rre150d0),
     Tmean = as.numeric(tre200d0),
     Tmin = as.numeric(tre200dn),
