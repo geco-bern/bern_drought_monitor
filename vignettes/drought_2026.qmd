@@ -24,6 +24,9 @@ current_year <- 2026
 
 meteo_pcwd <- read_csv(here("data", "Bern_pcwd_daily.csv"))
 
+df_SWP <- read_csv(here("data/daily_SWP_drakau.csv"))
+df_TWD <- read_csv(here("data/daily_TWD_drakau.csv"))
+
 vhi_plot_data <- read_csv(here("data", "swisseo_vhi_bern_plot_data.csv"))
 vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
 ```
@@ -176,15 +179,155 @@ p_fao
 
 The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
 
-<!-- ## 2. Soil moisture
+## 2. Soil moisture
 
 The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
 
 [Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
 
-For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further. -->
+For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
 
-<!-- ## 3. Tree water deficit
+### Soil water potential Bremgartenwald
+
+At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil. 
+
+```{R}
+df_SWP_plot <- df_SWP |>
+  mutate(
+    year = factor(
+      lubridate::year(date),
+      levels = c(2025, 2026)
+    ),
+
+    # Map 2025 and 2026 onto the same reference year
+    # so that the seasonal trajectories can be compared directly
+    plot_date = as.Date(
+      sprintf(
+        "2000-%02d-%02d",
+        lubridate::month(date),
+        lubridate::day(date)
+      )
+    ),
+
+    depth = factor(
+      series_height,
+      levels = c(-0.1, -0.4, -0.6, -1),
+      labels = c("10 cm", "40 cm", "60 cm", "100 cm")
+    ),
+
+    # Keep the desired panel order
+    plot = factor(
+      tree_name,
+      levels = c("P1", "P2", "P3")
+    )
+  ) |>
+  filter(
+    year %in% c("2025", "2026"),
+    tree_name %in% c("P1", "P2", "P3"),
+    !is.na(SWP_mean),
+    !is.na(depth)
+  )
+
+p1 <- ggplot(
+  df_SWP_plot,
+  aes(
+    x = plot_date,
+    y = SWP_mean,
+    colour = depth,
+    linetype = year,
+    group = interaction(year, depth)
+  )
+) +
+  geom_line(
+    linewidth = 0.7,
+    alpha = 0.9,
+    na.rm = TRUE
+  ) +
+  facet_wrap(
+    ~plot,
+    ncol = 1,
+    scales = "fixed"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "10 cm"  = "#F57C00",
+      "40 cm"  = "#4682B4",
+      "60 cm"  = "#2E8B57",
+      "100 cm" = "#7B1FA2"
+    ),
+    drop = FALSE
+  ) +
+  scale_linetype_manual(
+    values = c(
+      "2025" = "dashed",
+      "2026" = "solid"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "1 month",
+    date_labels = "%b",
+    limits = as.Date(c("2000-01-01", "2000-12-31")),
+    expand = expansion(mult = c(0.01, 0.01))
+  ) +
+  labs(
+    title = "Seasonal dynamics of soil matric potential",
+    subtitle = paste(
+      "Comparison of the complete 2025 record with the",
+      "available measurements from 2026."
+    ),
+    x = NULL,
+    y = "Soil matric potential (kPa)",
+    colour = "Soil depth",
+    linetype = "Year",
+    caption = paste(
+      "More negative values indicate drier soil conditions.",
+      "The 2026 time series is incomplete."
+    )
+  ) +
+  guides(
+    colour = guide_legend(
+      order = 1,
+      nrow = 1,
+      byrow = TRUE
+    ),
+    linetype = guide_legend(order = 2)
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      colour = "grey30",
+      margin = margin(b = 10)
+    ),
+    strip.text = element_text(
+      face = "bold",
+      size = 12
+    ),
+    strip.background = element_blank(),
+    legend.position = "top",
+    legend.box = "vertical",
+    legend.justification = "left",
+    axis.text.x = element_text(
+      angle = 0,
+      hjust = 0.5
+    ),
+    panel.spacing = grid::unit(1, "lines"),
+    plot.caption = element_text(
+      colour = "grey40",
+      hjust = 0
+    )
+  )
+
+p1
+```
+
+The graphic displays the soil matric potential at three different locations in the Bremgartenwald. P1 is the site that is closest to the Aare, P2 is further away from the Aare and P3 is the site furthest away from the Aare. In general the the further away the site is from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. The depth of the measurement also influences how dry the soil becomes. The further down in the soil, the lower the maximum dryness. 
+
+
+## 3. Tree water deficit
 
 TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
 
@@ -196,8 +339,163 @@ Regional differences are also apparent. The southern Alps and the Pre-Alps curre
 
 On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
 
-[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/) -->
+[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
 
+### Tree water deficit Bremgartenwald
+
+As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
+
+The following graphic compares tree water deficit measurements of 2025 with 2026.
+
+```{R}
+df_TWD_blog <- df_TWD |>
+  mutate(
+    year = factor(
+      lubridate::year(date),
+      levels = c(2025, 2026)
+    ),
+
+    # Place both years on the same seasonal x-axis
+    plot_date = as.Date(
+      sprintf(
+        "2000-%02d-%02d",
+        lubridate::month(date),
+        lubridate::day(date)
+      )
+    ),
+
+    # Extract site identifier and define panel order
+    site = stringr::str_sub(tree_name, -2, -1),
+
+    site = factor(
+      site,
+      levels = c("P1", "P2", "P3")
+    ),
+
+    species = factor(
+      tree_genus_species,
+      levels = c(
+        "Abies alba",
+        "Fagus sylvatica"
+      ),
+      labels = c(
+        "Silver fir (Abies alba)",
+        "European beech (Fagus sylvatica)"
+      )
+    )
+  ) |>
+  filter(
+    year %in% c("2025", "2026"),
+    site %in% c("P1", "P2", "P3"),
+    tree_genus_species %in% c(
+      "Abies alba",
+      "Fagus sylvatica"
+    ),
+    lubridate::month(date) >= 4,
+    lubridate::month(date) <= 10
+  ) |>
+  group_by(
+    plot_date,
+    year,
+    site,
+    species
+  ) |>
+  summarise(
+    TWD_mean = mean(TWD_mean, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(is.finite(TWD_mean))
+
+p_twd_blog <- ggplot(
+  df_TWD_blog,
+  aes(
+    x = plot_date,
+    y = TWD_mean,
+    colour = year,
+    linetype = year,
+    group = year
+  )
+) +
+  geom_line(
+    linewidth = 0.8,
+    alpha = 0.95,
+    na.rm = TRUE
+  ) +
+  facet_grid(
+    rows = vars(species),
+    cols = vars(site),
+    scales = "fixed"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "2025" = "#6F6F6F",
+      "2026" = "#0072B2"
+    )
+  ) +
+  scale_linetype_manual(
+    values = c(
+      "2025" = "dashed",
+      "2026" = "solid"
+    )
+  ) +
+  scale_x_date(
+    limits = as.Date(c("2000-04-01", "2000-10-31")),
+    date_breaks = "1 month",
+    date_labels = "%b",
+    expand = expansion(mult = c(0.01, 0.01))
+  ) +
+  labs(
+    title = "Tree water deficit across species and sites",
+    subtitle = paste(
+      "Seasonal development in 2025 and 2026.",
+      "Solid lines show 2026; dashed lines show 2025."
+    ),
+    x = NULL,
+    y = "Mean tree water deficit (\u00b5m)",
+    colour = "Year",
+    linetype = "Year",
+    caption = paste(
+      "Higher values indicate greater depletion of water stored",
+      "in the elastic tissues of the stem.",
+      "The 2026 time series is incomplete."
+    )
+  ) +
+  guides(
+    colour = guide_legend(order = 1),
+    linetype = guide_legend(order = 1)
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      colour = "grey30",
+      margin = margin(b = 10)
+    ),
+    strip.text = element_text(
+      face = "bold",
+      size = 11
+    ),
+    strip.background = element_blank(),
+    legend.position = "top",
+    legend.justification = "left",
+    axis.text.x = element_text(
+      angle = 0,
+      hjust = 0.5
+    ),
+    panel.spacing = grid::unit(1, "lines"),
+    plot.caption = element_text(
+      colour = "grey40",
+      hjust = 0
+    )
+  )
+
+p_twd_blog
+```
+
+For the tree water deficit measurements a similar pattern to the soil water potential is visible across sites. The site that is furthest away from the Aare shows the strongest tree water deficit. 
 
 ## Vegetation Health Index (VHI)
 
