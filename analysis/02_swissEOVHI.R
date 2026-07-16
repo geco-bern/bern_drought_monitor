@@ -221,12 +221,12 @@ latest_crop <- crop_to_aoi_from_url(latest_href)
 # 3) Save processed data for vignette
 # ---------------------------
 
-dir.create("data", showWarnings = FALSE)
+dir.create("data-dynamic", showWarnings = FALSE)
 
 # Save cropped raster
 writeRaster(
   latest_crop,
-  here("data", paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
+  here("data-dynamic", paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
   overwrite = TRUE
 )
 
@@ -238,7 +238,7 @@ plot_df <- raster_to_df(
 
 write.csv(
   plot_df,
-  here("data", "swisseo_vhi_bern_plot_data.csv"),
+  here("data-dynamic", "swisseo_vhi_bern_plot_data.csv"),
   row.names = FALSE
 )
 
@@ -254,6 +254,6 @@ stats <- plot_df |>
 
 write.csv(
   stats,
-  here("data", "swisseo_vhi_bern_stats.csv"),
+  here("data-dynamic", "swisseo_vhi_bern_stats.csv"),
   row.names = FALSE
 )

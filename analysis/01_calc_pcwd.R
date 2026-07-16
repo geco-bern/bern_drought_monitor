@@ -11,7 +11,7 @@ library(cwd)
 # ---- settings ----
 
 input_file <- here("data-raw","Bern_daily.csv")
-output_file <- here("data","Bern_pcwd_daily.csv")
+output_file <- here("data-dynamic","Bern_pcwd_daily.csv")
 
 station_lat <- 46.99
 current_year <- 2026

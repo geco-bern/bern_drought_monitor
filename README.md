@@ -149,7 +149,7 @@ data/swisseo_vhi_bern_crop_YYYY-MM-DD.tif
 vignettes/drought_2026.qmd
 ```
 
-The Quarto document loads the processed datasets from `data/` and generates all figures during rendering.
+The Quarto document loads the processed datasets from `data-dynamic/` and generates all figures during rendering.
 
 This includes:
 
@@ -158,6 +158,15 @@ This includes:
 * swissEO Vegetation Health Index map
 
 The document also incorporates summary statistics directly into the text and provides the written drought assessment.
+
+---
+
+## How to Update the Blog
+
+```
+cd ~/GitHub/geco-bern/drought_switzerland_blog
+quarto publish vignettes/drought_2026.qmd
+```
 
 ---
 
@@ -219,7 +228,7 @@ Rendered Quarto outputs are written to:
 vignettes/
 ```
 
-All figures are generated dynamically during rendering from the processed datasets stored in `data/`.
+All figures are generated dynamically during rendering from the processed datasets stored in `data-dynamic/`.
 
 Outputs may be available as:
 
