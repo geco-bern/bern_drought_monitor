@@ -49,7 +49,7 @@ bbox_wgs84 <- aoi_lv95 |>
   as.numeric()
 
 # Output folder
-out_dir <- "data-raw/swisseo_vhi_bern"
+out_dir <- here("data-raw","swisseo_vhi_bern")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Search window: broad enough to also find data that may be published with a delay
@@ -226,7 +226,7 @@ dir.create("data", showWarnings = FALSE)
 # Save cropped raster
 writeRaster(
   latest_crop,
-  file.path("data", paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
+  here("data", paste0("swisseo_vhi_bern_crop_", latest_date, ".tif")),
   overwrite = TRUE
 )
 
@@ -238,7 +238,7 @@ plot_df <- raster_to_df(
 
 write.csv(
   plot_df,
-  file.path("data", "swisseo_vhi_bern_plot_data.csv"),
+  here("data", "swisseo_vhi_bern_plot_data.csv"),
   row.names = FALSE
 )
 
@@ -254,6 +254,6 @@ stats <- plot_df |>
 
 write.csv(
   stats,
-  file.path("data", "swisseo_vhi_bern_stats.csv"),
+  here("data", "swisseo_vhi_bern_stats.csv"),
   row.names = FALSE
 )

@@ -22,10 +22,17 @@ library(terra)
 
 current_year <- 2026
 
+# (optionally) update underlying calculation with freshly downloaded data
+#TODO: source(here("analysis", "00_download_meteoswiss_data.R")) # creates: data-raw/meteoswiss_station_bern/Bern_cur_daily.csv and Bern_hist_daily.csv
+#TODO: source(here("analysis", "01_calc_pcwd.R"))                # creates: data/Bern_pcwd_daily.csv
+#TODO: source(here("analysis", "02_swissEOVHI.R"))              # creates: data/Bern_pcwd_daily.csv
+# alternatively: avoid data-download
+# TODO: file.copy(from = here("static_data/swisseo_vhi_bern/"), to = TODO, recursive = TRUE)
+
 meteo_pcwd <- read_csv(here("data", "Bern_pcwd_daily.csv"))
 
-df_SWP <- read_csv(here("data/daily_SWP_drakau.csv"))
-df_TWD <- read_csv(here("data/daily_TWD_drakau.csv"))
+df_SWP <- read_csv(here("data","daily_SWP_drakau.csv"))
+df_TWD <- read_csv(here("data","daily_TWD_drakau.csv"))
 
 vhi_plot_data <- read_csv(here("data", "swisseo_vhi_bern_plot_data.csv"))
 vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
@@ -124,11 +131,11 @@ p_pt <- ggplot() +
   theme_bw()
 p_pt
 
-ggsave(
-  here("fig/pcwd_pt.pdf"),
-  width = 8, 
-  height = 5
-)
+# ggsave(
+#   here("fig/pcwd_pt.pdf"),
+#   width = 8, 
+#   height = 5
+# )
 ```
 
 The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 

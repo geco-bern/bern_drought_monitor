@@ -10,8 +10,8 @@ library(cwd)
 
 # ---- settings ----
 
-input_file <- "data-raw/Bern_daily.csv"
-output_file <- "data/Bern_pcwd_daily.csv"
+input_file <- here("data-raw","Bern_daily.csv")
+output_file <- here("data","Bern_pcwd_daily.csv")
 
 station_lat <- 46.99
 current_year <- 2026
@@ -45,8 +45,8 @@ read_meteo_daily <- function(file) {
     select(all_of(cols_needed))
 }
 
-bern_hist <- read_meteo_daily("data-raw/Bern_hist_daily.csv")
-bern_cur  <- read_meteo_daily("data-raw/Bern_cur_daily.csv")
+bern_hist <- read_meteo_daily(here("data-raw","Bern_hist_daily.csv"))
+bern_cur  <- read_meteo_daily(here("data-raw","Bern_cur_daily.csv"))
 
 meteo_daily_raw <- bind_rows(bern_hist, bern_cur) |>
   distinct(reference_timestamp, .keep_all = TRUE)
@@ -72,8 +72,8 @@ meteo_daily <- meteo_daily_raw |>
     Rs = as.numeric(gre000d0) * 86400 / 1e6,
     SW_IN  = as.numeric(gre000d0),
     LW_IN  = as.numeric(oli000d0),
-  ) |> 
-  
+  ) |>
+
   # xxx Achtung: Filter sind gefährlich. Versuche möglichst zu vermeiden und falls nötig gapfilling zu machen.
   # vor 2010 wurde die Strahlung nicht gemessen, daher erst Daten ab diesem Jahr beachtet.
   filter(
@@ -115,7 +115,7 @@ meteo_daily <- meteo_daily |>
 
 # ---- FAO56 PET sensitivity analysis ----
 
-source("R/calc_pet.R")
+source(here("R/calc_pet.R"))
 
 meteo_daily_fao <- meteo_daily |>
   mutate(

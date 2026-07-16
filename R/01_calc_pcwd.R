@@ -1,3 +1,5 @@
+### XXX: Fabian: is this still needed? We have a similar one in analysis/01_calc_pcwd.R
+
 # Calculate PCWD for MeteoSwiss daily data: Bern/Zollikofen
 
 library(readr)
@@ -9,8 +11,8 @@ library(SPEI)
 
 # ---- settings ----
 
-input_file <- "data-raw/Bern_daily.csv"
-output_file <- "data/Bern_pcwd_daily.csv"
+input_file <- here("data-raw","Bern_daily.csv")
+output_file <- here("data","Bern_pcwd_daily.csv")
 
 station_lat <- 46.99
 current_year <- 2026
