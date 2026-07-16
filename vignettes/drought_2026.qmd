@@ -22,20 +22,56 @@ library(terra)
 
 current_year <- 2026
 
-# (optionally) update underlying calculation with freshly downloaded data
-#TODO: source(here("analysis", "00_download_meteoswiss_data.R")) # creates: data-raw/meteoswiss_station_bern/Bern_cur_daily.csv and Bern_hist_daily.csv
-#TODO: source(here("analysis", "01_calc_pcwd.R"))                # creates: data/Bern_pcwd_daily.csv
-#TODO: source(here("analysis", "02_swissEOVHI.R"))              # creates: data/Bern_pcwd_daily.csv
-# alternatively: avoid data-download
-# TODO: file.copy(from = here("static_data/swisseo_vhi_bern/"), to = TODO, recursive = TRUE)
+# A) (optionally) update underlying data set with freshly downloaded data
+dir.create(here("data-dynamic"), showWarnings = FALSE)
+# MeteoSwiss data:
+if (FALSE) { # NOTE: activate this for automatic update
+  source(here("analysis", "00_download_meteoswiss_data.R")) 
+  # creates: data-raw/meteoswiss_station_bern/Bern_cur_daily.csv and Bern_hist_daily.csv
+  
+  source(here("analysis", "01_calc_pcwd.R"))                
+  # creates: data-dynamic/Bern_pcwd_daily.csv
+} else {
+  for (filename in c("Bern_pcwd_daily.csv")){
+    file.copy(from = here("data/",         filename), 
+              to   = here("data-dynamic/", filename), 
+              overwrite = TRUE)
+  }
+}
+# GECO-sites:
+if (FALSE) { # NOTE: activate this for automatic update
+  source(here("analysis", "03_GECOsites.R")) # TODO: this does not yet exist
+  # creates: data-dynamic/daily_SWP_drakau.csv and daily_TWD_drakau.csv
+} else {
+  for (filename in c("daily_SWP_drakau.csv", "daily_TWD_drakau.csv")){
+    file.copy(from = here("data/",         filename), 
+              to   = here("data-dynamic/", filename), 
+              overwrite = TRUE)
+  }
+}
+# SwissEOVHI:
+if (FALSE) { # NOTE: activate this for automatic update
+  source(here("analysis", "02_swissEOVHI.R"))
+  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+} else {
+  for (filename in c("swisseo_vhi_bern_plot_data.csv", "swisseo_vhi_bern_stats.csv")){
+    file.copy(from = here("data/",         filename), 
+              to   = here("data-dynamic/", filename), 
+              overwrite = TRUE)
+  }
+}
 
-meteo_pcwd <- read_csv(here("data", "Bern_pcwd_daily.csv"))
 
-df_SWP <- read_csv(here("data","daily_SWP_drakau.csv"))
-df_TWD <- read_csv(here("data","daily_TWD_drakau.csv"))
 
-vhi_plot_data <- read_csv(here("data", "swisseo_vhi_bern_plot_data.csv"))
-vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
+
+# B) Load (updated) data
+meteo_pcwd <- read_csv(here("data-dynamic", "Bern_pcwd_daily.csv"))
+
+df_SWP <- read_csv(here("data-dynamic","daily_SWP_drakau.csv"))
+df_TWD <- read_csv(here("data-dynamic","daily_TWD_drakau.csv"))
+
+vhi_plot_data <- read_csv(here("data-dynamic", "swisseo_vhi_bern_plot_data.csv"))
+vhi_stats <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
 ```
 
 ## Overview

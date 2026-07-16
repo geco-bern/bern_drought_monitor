@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 # docs and unit tests
 ^\.github$
 ^_pkgdown\.yml$

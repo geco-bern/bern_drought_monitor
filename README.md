@@ -149,7 +149,7 @@ data/swisseo_vhi_bern_crop_YYYY-MM-DD.tif
 vignettes/drought_2026.qmd
 ```
 
-The Quarto document loads the processed datasets from `data/` and generates all figures during rendering.
+The Quarto document loads the processed datasets from `data-dynamic/` and generates all figures during rendering.
 
 This includes:
 
@@ -159,39 +159,30 @@ This includes:
 
 The document also incorporates summary statistics directly into the text and provides the written drought assessment.
 
+
 ---
 
 ## How to Reproduce the Analysis
 
-Run the following scripts in sequence:
+With below code the blog can be updated:
+```
+cd ~/GitHub/geco-bern/drought_switzerland_blog
+quarto publish vignettes/drought_2026.qmd
 
-### Step 1
-
-```r
-source(here::here("analysis/download_meteoswiss_data.R"))
+# alternatively do it from R:
+# renv::restore()
+# quarto::quarto_render("vignettes/drought_2026.qmd")
+# quarto::quarto_publish_site("vignettes/drought_2026.qmd")
 ```
 
-### Step 2
+To render the article locally without updating the blog:
 
 ```r
-source(here::here("R/01_calc_pcwd.R"))
-```
-
-### Step 3
-
-```r
-source(here::here("R/02_swissEOVHI.R"))
-```
-
-### Step 4
-
-Review and update:
-
-```r
+renv::restore()
 quarto::quarto_render("vignettes/drought_2026.qmd")
 ```
 
-The Quarto document automatically generates all figures from the processed datasets stored in `data/`.
+The Quarto document automatically generates all figures from the processed datasets stored in `data-dynamic/`.
 
 
 ---
@@ -201,7 +192,7 @@ The Quarto document automatically generates all figures from the processed datas
 ### Processed data
 
 ```text
-data/
+data-dynamic/
 ```
 
 Examples:
@@ -219,7 +210,7 @@ Rendered Quarto outputs are written to:
 vignettes/
 ```
 
-All figures are generated dynamically during rendering from the processed datasets stored in `data/`.
+All figures are generated dynamically during rendering from the processed datasets stored in `data-dynamic/`.
 
 Outputs may be available as:
 
