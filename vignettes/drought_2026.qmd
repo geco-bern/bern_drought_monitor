@@ -1,6 +1,6 @@
 ---
 title: "Current drought situation in Bern, Switzerland"
-author: "Benjamin Stocker & Sascha Friedli"
+author: "Benjamin Stocker, Fabian Bernhard & Sascha Friedli"
 date: today
 format:
   html:
@@ -453,8 +453,7 @@ p1 <- ggplot(
     colour = "Soil depth",
     linetype = "Year",
     caption = paste(
-      "More negative values indicate drier soil conditions.",
-      "The 2026 time series is incomplete."
+      "More negative values indicate drier soil conditions."
     )
   ) +
   guides(
@@ -545,6 +544,7 @@ df_TWD_blog <- df_TWD |>
       levels = c("P1", "P2", "P3")
     ),
 
+    # Short common names for clearer facet labels
     species = factor(
       tree_genus_species,
       levels = c(
@@ -552,8 +552,8 @@ df_TWD_blog <- df_TWD |>
         "Fagus sylvatica"
       ),
       labels = c(
-        "Silver fir (Abies alba)",
-        "European beech (Fagus sylvatica)"
+        "Silver fir",
+        "European beech"
       )
     )
   ) |>
@@ -628,9 +628,8 @@ p_twd_blog <- ggplot(
     colour = "Year",
     linetype = "Year",
     caption = paste(
-      "Higher values indicate greater depletion of water stored",
-      "in the elastic tissues of the stem.",
-      "The 2026 time series is incomplete."
+      "Silver fir corresponds to Abies alba; European beech to Fagus sylvatica.\nHigher values indicate greater depletion of water stored in the elastic",
+      "tissues of the stem."
     )
   ) +
   guides(
@@ -661,7 +660,14 @@ p_twd_blog <- ggplot(
     panel.spacing = grid::unit(1, "lines"),
     plot.caption = element_text(
       colour = "grey40",
-      hjust = 0
+      hjust = 0,
+      margin = margin(t = 10)
+    ),
+    plot.margin = margin(
+      t = 10,
+      r = 20,
+      b = 10,
+      l = 15
     )
   )
 
@@ -764,6 +770,6 @@ vhi_stats |>
 
 Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
 
-This signal is also reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
+This signal is reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
 Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress.
