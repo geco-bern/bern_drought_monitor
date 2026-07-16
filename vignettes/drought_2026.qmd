@@ -186,6 +186,136 @@ p_fao
 
 The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
 
+For a larger context PCWD was calculated with the Thornthwaite method to calculate the PET and PCWD over the entire record.
+
+```{R}
+#| label: fig-pcwd-thorn
+#| fig-cap: "Potential cumulative water deficit in Bern/Zollikofen based on Thornthwaite PET using the full available temperature record."
+#| fig-width: 8
+#| fig-height: 5
+
+# Mean seasonal course across all completed years
+pcwd_thorn_mean <- meteo_pcwd |>
+  filter(
+    year < current_year,
+    !is.na(PCWD_THORN)
+  ) |>
+  group_by(doy) |>
+  summarise(
+    PCWD_THORN_mean = mean(PCWD_THORN, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Current year only
+pcwd_thorn_current <- meteo_pcwd |>
+  filter(
+    year == current_year,
+    date < max(date, na.rm = TRUE),
+    !is.na(PCWD_THORN)
+  )
+
+# Years to highlight
+highlight_years <- c(current_year, 2022, 2018, 2023)
+
+# Determine the actual Thornthwaite year range
+pcwd_thorn_year_range <- meteo_pcwd |>
+  filter(!is.na(PCWD_THORN)) |>
+  summarise(
+    first_year = min(year),
+    last_year = max(year)
+  )
+
+# Combine highlighted historical years with the current year
+pcwd_thorn_highlight <- bind_rows(
+  meteo_pcwd |>
+    filter(
+      year %in% c(2022, 2018, 2023),
+      !is.na(PCWD_THORN)
+    ),
+  pcwd_thorn_current
+) |>
+  mutate(
+    year = factor(
+      year,
+      levels = highlight_years
+    )
+  )
+
+highlight_colours <- setNames(
+  c(
+    "#D73027",
+    "#4575B4",
+    "#E69F00",
+    "#009E73"
+  ),
+  as.character(highlight_years)
+)
+
+p_thorn <- ggplot() +
+  geom_line(
+    data = meteo_pcwd |>
+      filter(
+        !year %in% highlight_years,
+        !is.na(PCWD_THORN)
+      ),
+    aes(
+      x = doy,
+      y = PCWD_THORN,
+      group = year
+    ),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
+  ) +
+
+  # Optional long-term mean
+  # geom_line(
+  #   data = pcwd_thorn_mean,
+  #   aes(
+  #     x = doy,
+  #     y = PCWD_THORN_mean
+  #   ),
+  #   colour = "black",
+  #   linewidth = 1
+  # ) +
+
+  geom_line(
+    data = pcwd_thorn_highlight,
+    aes(
+      x = doy,
+      y = PCWD_THORN,
+      colour = year,
+      group = year
+    ),
+    linewidth = 0.6
+  ) +
+
+  scale_colour_manual(
+    values = highlight_colours,
+    breaks = as.character(highlight_years),
+    name = "Year"
+  ) +
+
+  labs(
+    x = "Day of year",
+    y = "PCWD (mm)",
+    title = "Potential cumulative water deficit",
+    subtitle = paste0(
+      "Bern-Zollikofen, Thornthwaite PET (",
+      pcwd_thorn_year_range$first_year,
+      "–",
+      pcwd_thorn_year_range$last_year,
+      ")"
+    )
+  ) +
+
+  theme_bw()
+
+p_thorn
+```
+
+The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+
 ## 2. Soil moisture
 
 The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
@@ -594,10 +724,10 @@ vhi_stats |>
   mutate(across(where(is.numeric), ~ round(.x, 1)))
 ```
 
-<!-- ## 5. Current drought status summary
+## 5. Current drought status summary
 
 Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
 
-This signal is also reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, TreeNet observations reveal that many tree species across Switzerland are already experiencing measurable water deficits, with particularly pronounced stress in Scots pine, silver fir, ash and downy oak.
+This signal is also reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
-Regarding PCWD the current conditions are among the most exceptional on the record. The vegetation health index shows that in certain regions around Bern are in a stressed to very stressed state. Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts another heatwave over central Europe with maximal daily temperatures ranging from 30-35 degrees Celsius. This will likely further increase drought stress over the coming days.  -->
+Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress.
