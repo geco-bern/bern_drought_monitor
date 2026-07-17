@@ -108,6 +108,8 @@ Potential cumulative water deficit (PCWD) describes the accumulated atmospheric 
 
 :::
 
+#### Historic context of current PCWD
+
 ```{r}
 #| label: fig-pcwd
 #| fig-cap: "Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis."
@@ -362,6 +364,93 @@ p_thorn
 ```
 
 The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+
+#### Spatial visualization of current PCWD
+
+To illustrate the spatial extent current meteorological drought conditions, we derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+
+Below two figures shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of its average for the given year.
+
+```{R plot ERA5-Land map}
+#| label: fig-pcwd-ERA5Land-map
+#| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestlye Taylor PET)."
+#| fig-width: 8
+#| fig-height: 5
+
+
+# laad data for ERA5-Land map and ERA5-Land timeseries
+cwd_ERA5Land <- terra::rast(
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+)
+cwd_ERA5Land_df <- tidync::hyper_tibble(
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+) |> mutate(time = lubridate::ymd(time))
+
+# plot ERA5-Land map
+date_to_plot <- "2024-07-15"
+raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
+
+pal_ERA5LAND_PCWD <- colorNumeric(
+  palette = "viridis",
+  domain = values(raster_to_plot_ERA5LAND_PCWD),
+  na.color = "transparent"
+)
+
+leaflet() |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addRasterImage(
+    raster_to_plot_ERA5LAND_PCWD,
+    colors = pal_ERA5LAND_PCWD,
+    opacity = 0.75,
+    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot)
+  ) |>
+  addLayersControl(
+    baseGroups = c("World Topo", "World Imagery"),
+    overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
+    position = "topleft",
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addLegend(
+    position = "topright",
+    pal = pal_ERA5LAND_PCWD, 
+    values = values(raster_to_plot_ERA5LAND_PCWD), 
+    opacity = 1,
+    title = "PCWD (mm)"
+  ) |>
+  addControl(
+    html = "Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.",
+    position = "bottomleft"
+  )
+```
+```{R plot ERA5-Land time series}
+#| label: fig-pcwd-ERA5Land-timeseries
+#| fig-cap: "Temporal evolution of the average potential cumulative water deficit across central Europe (Priestlye Taylor PET) derived from ERA5-Land reanalysis data."
+#| fig-width: 8
+#| fig-height: 2
+
+# b) plot the average evolution for the region
+cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm))
+
+plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
+  geom_line() + theme_bw() + labs(x=NULL, y= "Region average of PCWD (mm)")
+
+plt_ERA5Land_temp
+```
+::: {.callout-note}
+## Source: ERA5-Land data
+
+ERA5-Land data is provided by the Copernicus programme and was downloaded through the Copernicus Climate Change Service (C3S)
+
+- Copernicus Climate Change Service (C3S)(2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 31-Mar-2025)
+
+- Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
+
+Data description is available in:
+Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 31-Mar-2025)
+
+
+:::
 
 ## 2. Soil moisture
 
