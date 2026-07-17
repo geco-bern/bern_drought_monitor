@@ -19,6 +19,7 @@ library(ggplot2)
 library(scales)
 library(leaflet)
 library(terra)
+library(lubridate)
 
 current_year <- 2026
 
@@ -433,7 +434,14 @@ leaflet() |>
 cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm))
 
 plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
-  geom_line() + theme_bw() + labs(x=NULL, y= "Region average of PCWD (mm)")
+  geom_line() + 
+  theme_bw() + 
+  labs(x=NULL, y= "Region average of PCWD (mm)") + 
+  geom_vline(xintercept = ymd(date_to_plot), color = "red") +
+  geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
+            x = ymd(date_to_plot), y = Inf, 
+            label = "Date shown in above map", color = "red", vjust=1.5)
+
 
 plt_ERA5Land_temp
 ```
