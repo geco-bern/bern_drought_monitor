@@ -60,8 +60,19 @@ if (FALSE) { # NOTE: activate this for automatic update
               overwrite = TRUE)
   }
 }
-
-
+# ERA5-Land:
+if (FALSE) { # NOTE: activate this for automatic update
+  source(here("analysis", "04_calc_pcwd_era5land.R"))
+  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+} else {
+  for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionEUROPE.nc"
+                     )){
+    file.copy(from = here("data/",         filename), 
+              to   = here("data-dynamic/", filename), 
+              overwrite = TRUE)
+  }
+}
 
 
 # B) Load (updated) data
