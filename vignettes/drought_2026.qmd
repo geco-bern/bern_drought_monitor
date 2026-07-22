@@ -66,8 +66,8 @@ if (FALSE) { # NOTE: activate this for automatic update
   source(here("analysis", "04_calc_pcwd_era5land.R"))
   # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
 } else {
-  for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc",
-                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionEUROPE.nc"
+  for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc"
                      )){
     file.copy(from = here("data/",         filename), 
               to   = here("data-dynamic/", filename), 
@@ -381,14 +381,14 @@ Below two figures shows the spatial distribution of the PCWD across a larger reg
 
 # laad data for ERA5-Land map and ERA5-Land timeseries
 cwd_ERA5Land <- terra::rast(
-  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc") # or "regionEUROPE.nc"
 )
 cwd_ERA5Land_df <- tidync::hyper_tibble(
-  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2024_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc") # or "regionEUROPE.nc"
 ) |> mutate(time = lubridate::ymd(time))
 
 # plot ERA5-Land map
-date_to_plot <- "2024-07-15"
+date_to_plot <- "2026-06-30"
 raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
 
 pal_ERA5LAND_PCWD <- colorNumeric(
