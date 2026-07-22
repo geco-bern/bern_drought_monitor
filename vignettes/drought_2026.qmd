@@ -20,6 +20,7 @@ library(scales)
 library(leaflet)
 library(terra)
 library(lubridate)
+library(base64enc)
 
 current_year <- 2026
 
@@ -372,7 +373,7 @@ To illustrate the spatial extent current meteorological drought conditions, we d
 
 Below two figures shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of its average for the given year.
 
-```{R plot ERA5-Land map}
+```{R plot ERA5-Land}
 #| label: fig-pcwd-ERA5Land-map
 #| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestlye Taylor PET)."
 #| fig-width: 8
@@ -397,42 +398,13 @@ pal_ERA5LAND_PCWD <- colorNumeric(
   na.color = "transparent"
 )
 
-leaflet() |>
-  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
-  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
-  addRasterImage(
-    raster_to_plot_ERA5LAND_PCWD,
-    colors = pal_ERA5LAND_PCWD,
-    opacity = 0.75,
-    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot)
-  ) |>
-  addLayersControl(
-    baseGroups = c("World Topo", "World Imagery"),
-    overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
-    position = "topleft",
-    options = layersControlOptions(collapsed = FALSE)
-  ) |>
-  addLegend(
-    position = "topright",
-    pal = pal_ERA5LAND_PCWD, 
-    values = values(raster_to_plot_ERA5LAND_PCWD), 
-    opacity = 1,
-    title = "PCWD (mm)"
-  ) |>
-  addControl(
-    html = "Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.",
-    position = "bottomleft"
-  )
-```
-```{R plot ERA5-Land time series}
-#| label: fig-pcwd-ERA5Land-timeseries
-#| fig-cap: "Temporal evolution of the average potential cumulative water deficit across central Europe (Priestlye Taylor PET) derived from ERA5-Land reanalysis data."
-#| fig-width: 8
-#| fig-height: 2
-
-# b) plot the average evolution for the region
-cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm))
-
+# Prepare the regional average time series plot (will be embedded into the map)
+cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> 
+  group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm)) |> 
+  slice_head(n = -1) # drop last line which appears to be set to pcwd_mm = 0
+### | fig-cap: "Temporal evolution of the average potential cumulative water deficit across central Europe (Priestlye Taylor PET) derived from ERA5-Land reanalysis data."
+### | fig-width: 8
+### | fig-height: 2
 plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
   geom_line() + 
   theme_bw() + 
@@ -440,11 +412,52 @@ plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
   geom_vline(xintercept = ymd(date_to_plot), color = "red") +
   geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
             x = ymd(date_to_plot), y = Inf, 
-            label = "Date shown in above map", color = "red", vjust=1.5)
+            label = "Map\ndate", color = "red", vjust=0.5, hjust = 0, angle = 270) # vjust=-0.2
 
+# render the plot to a PNG and encode as data URI for embedding as inset into map
+tmp_png <- tempfile(fileext = ".png")
+png(tmp_png, width = 600, height = 220, res = 150)
+print(plt_ERA5Land_temp + labs(y=NULL))
+dev.off();
+img_uri <- base64enc::dataURI(file = tmp_png, mime = "image/png")
 
-plt_ERA5Land_temp
+# generate map as leaflet
+leaflet() |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addRasterImage(
+    raster_to_plot_ERA5LAND_PCWD,
+    colors = pal_ERA5LAND_PCWD,
+    opacity = 0.75,
+    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
+    attribution = paste(
+      "\n&copy; Copernicus Climate Change Service information &lt;2019&gt;. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
+    )
+  ) |>
+  addLayersControl(
+    position = "topleft",
+    baseGroups = c("World Topo", "World Imagery"),
+    overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addControl(
+    position = "topleft",
+    html = paste0("<style>
+                  .leaflet-control-layers { width:220px !important; box-sizing:border-box; }
+                  </style>", 
+                  sprintf(
+                    "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Time series of region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
+      220-16, img_uri)) # 220px - 2*8px padding
+  ) |>
+  addLegend(
+    position = "topright",
+    pal = pal_ERA5LAND_PCWD, 
+    values = values(raster_to_plot_ERA5LAND_PCWD), 
+    opacity = 1,
+    title = "PCWD (mm)"
+  )
 ```
+
 ::: {.callout-note}
 ## Source: ERA5-Land data
 
