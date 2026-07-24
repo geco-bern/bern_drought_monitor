@@ -471,9 +471,15 @@ leaflet() |>
 
 ## Soil water
 
-At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil. 
+At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
 
 ```{R}
+#| label: fig-smp
+#| fig-cap: "Seasonal dynamics of soil matric potential at different landscape positions (above Aare river) and soil depths in 2025 and 2026."
+#| fig-width: 8
+#| fig-height: 8
+
+source(here::here("R", "plot_helper.R"))
 df_SWP_plot <- df_SWP |>
   mutate(
     year = factor(
@@ -500,7 +506,7 @@ df_SWP_plot <- df_SWP |>
     # Keep the desired panel order
     plot = factor(
       tree_name,
-      levels = c("P1", "P2", "P3")
+      levels = c("P3", "P2", "P1", "G1"), labels = c("High","Mid","Low", "G1")
     )
   ) |>
   filter(
@@ -510,14 +516,13 @@ df_SWP_plot <- df_SWP |>
     !is.na(depth)
   )
 
-p1 <- ggplot(
+p1 <- 
+  ggplot(
   df_SWP_plot,
   aes(
     x = plot_date,
     y = SWP_mean,
-    colour = depth,
-    linetype = year,
-    group = interaction(year, depth)
+    colour = year,
   )
 ) +
   geom_line(
@@ -525,42 +530,37 @@ p1 <- ggplot(
     alpha = 0.9,
     na.rm = TRUE
   ) +
-  facet_wrap(
-    ~plot,
-    ncol = 1,
+  facet_grid(
+    depth~plot,
     scales = "fixed"
   ) +
   scale_colour_manual(
-    values = c(
-      "10 cm"  = "#F57C00",
-      "40 cm"  = "#4682B4",
-      "60 cm"  = "#2E8B57",
-      "100 cm" = "#7B1FA2"
-    ),
+    values = c(highlight_colours, c("2025" = "darkgrey")),
     drop = FALSE
   ) +
-  scale_linetype_manual(
-    values = c(
-      "2025" = "dashed",
-      "2026" = "solid"
-    )
-  ) +
+  # scale_linetype_manual(
+  #   values = c(
+  #     "2025" = "dashed",
+  #     "2026" = "solid"
+  #   )
+  # ) +
   scale_x_date(
-    date_breaks = "1 month",
+    date_breaks = "2 month",
+    date_minor_breaks = "1 month",
     date_labels = "%b",
     limits = as.Date(c("2000-01-01", "2000-12-31")),
     expand = expansion(mult = c(0.01, 0.01))
   ) +
+  scale_y_logModulus() + 
   labs(
     title = "Seasonal dynamics of soil matric potential",
-    subtitle = paste(
-      "Comparison of the complete 2025 record with the",
-      "available measurements from 2026."
-    ),
+    # subtitle = paste(
+    #   "Comparison of the complete 2025 record with the",
+    #   "available measurements from 2026."
+    # ),
     x = NULL,
     y = "Soil matric potential (kPa)",
     colour = "Soil depth",
-    linetype = "Year",
     caption = paste(
       "More negative values indicate drier soil conditions."
     )
@@ -570,8 +570,7 @@ p1 <- ggplot(
       order = 1,
       nrow = 1,
       byrow = TRUE
-    ),
-    linetype = guide_legend(order = 2)
+    )
   ) +
   theme_classic(base_size = 13) +
   theme(
