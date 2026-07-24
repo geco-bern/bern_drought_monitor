@@ -23,6 +23,8 @@ library(lubridate)
 library(base64enc)
 
 current_year <- 2026
+source(here::here("R", "plot_helper.R"))
+
 
 # A) (optionally) update underlying data set with freshly downloaded data
 dir.create(here("data-dynamic"), showWarnings = FALSE)
@@ -124,9 +126,10 @@ Potential cumulative water deficit (PCWD) describes the accumulated atmospheric 
 
 ```{r}
 #| label: fig-pcwd
-#| fig-cap: "Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis."
-#| fig-width: 8
+#| warning: false
+#| fig-cap: Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis.
 #| fig-height: 5
+#| fig-width: 8
 
 pcwd_mean <- meteo_pcwd |>
   filter(year < current_year) |>
@@ -189,14 +192,12 @@ p_pt <- ggplot() +
       pcwd_year_range[1], "–", pcwd_year_range[2], ")"
     )
   ) +
-  theme_bw()
+  general_plot_theme +
+  theme(
+    legend.position = "inside", legend.position.inside = c(0.01,1),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
+  )
 p_pt
-
-# ggsave(
-#   here("fig/pcwd_pt.pdf"),
-#   width = 8, 
-#   height = 5
-# )
 ```
 
 The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
@@ -301,7 +302,6 @@ pcwd_thorn_highlight <- bind_rows(
       levels = highlight_years
     )
   )
-
 highlight_colours <- setNames(
   c(
     "#D73027",
@@ -328,7 +328,6 @@ p_thorn <- ggplot() +
     linewidth = 0.4,
     alpha = 0.5
   ) +
-
   # Optional long-term mean
   # geom_line(
   #   data = pcwd_thorn_mean,
@@ -339,7 +338,6 @@ p_thorn <- ggplot() +
   #   colour = "black",
   #   linewidth = 1
   # ) +
-
   geom_line(
     data = pcwd_thorn_highlight,
     aes(
@@ -350,13 +348,11 @@ p_thorn <- ggplot() +
     ),
     linewidth = 0.6
   ) +
-
   scale_colour_manual(
     values = highlight_colours,
     breaks = as.character(highlight_years),
     name = "Year"
   ) +
-
   labs(
     x = "Day of year",
     y = "PCWD (mm)",
@@ -369,8 +365,11 @@ p_thorn <- ggplot() +
       ")"
     )
   ) +
-
-  theme_bw()
+  general_plot_theme +
+  theme(
+    legend.position = "inside", legend.position.inside = c(0.01,1),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
+  )
 
 p_thorn
 ```
@@ -379,7 +378,7 @@ The Thornthwaite-based reconstruction allows to extend the PCWD record back to 1
 
 #### Spatial visualization of current PCWD
 
-To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from the global [ERA5-Land-T reanalysis dataset](https://doi.org/10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
 
 Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date and the temporal evolution of the region.
 
@@ -424,7 +423,8 @@ plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
   scale_x_date(NULL, date_breaks = "2 month", date_minor_breaks = "1 month", date_labels = "%b") + # \n%Y
   geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
             x = ymd(date_to_plot), y = Inf, 
-            label = "Map\ndate", color = "red", vjust=1.2, hjust = -0.5, angle = 270) # vjust=-0.2
+            label = "Map\ndate", color = "red", vjust=1.2, hjust = -0.5, angle = 270) + # vjust=-0.2
+  general_plot_theme
 
 # render the plot to a PNG and encode as data URI for embedding as inset into map
 tmp_png <- tempfile(fileext = ".png")
@@ -474,12 +474,10 @@ leaflet() |>
 At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
 
 ```{R}
-#| label: fig-smp
+#| label: fig-swp
 #| fig-cap: "Seasonal dynamics of soil matric potential at different landscape positions (above Aare river) and soil depths in 2025 and 2026."
 #| fig-width: 8
-#| fig-height: 8
-
-source(here::here("R", "plot_helper.R"))
+#| fig-height: 6.4
 df_SWP_plot <- df_SWP |>
   mutate(
     year = factor(
@@ -511,39 +509,36 @@ df_SWP_plot <- df_SWP |>
   ) |>
   filter(
     year %in% c("2025", "2026"),
-    tree_name %in% c("P1", "P2", "P3"),
+    plot %in% c("High","Mid","Low"),
     !is.na(SWP_mean),
     !is.na(depth)
   )
 
 p1 <- 
   ggplot(
-  df_SWP_plot,
-  aes(
-    x = plot_date,
-    y = SWP_mean,
-    colour = year,
-  )
-) +
+    df_SWP_plot,
+    aes(
+      x = plot_date,
+      y = SWP_mean,
+      colour = year,
+    )
+  ) +
   geom_line(
     linewidth = 0.7,
     alpha = 0.9,
     na.rm = TRUE
   ) +
   facet_grid(
-    depth~plot,
-    scales = "fixed"
+    cols = vars(plot),
+    rows = vars(depth),
+    scales = "fixed",
+    labeller = labeller(depth = label_both,
+                        .default = label_value)
   ) +
   scale_colour_manual(
     values = c(highlight_colours, c("2025" = "darkgrey")),
     drop = FALSE
   ) +
-  # scale_linetype_manual(
-  #   values = c(
-  #     "2025" = "dashed",
-  #     "2026" = "solid"
-  #   )
-  # ) +
   scale_x_date(
     date_breaks = "2 month",
     date_minor_breaks = "1 month",
@@ -554,51 +549,17 @@ p1 <-
   scale_y_logModulus() + 
   labs(
     title = "Seasonal dynamics of soil matric potential",
-    # subtitle = paste(
-    #   "Comparison of the complete 2025 record with the",
-    #   "available measurements from 2026."
-    # ),
     x = NULL,
     y = "Soil matric potential (kPa)",
-    colour = "Soil depth",
+    colour = NULL,
     caption = paste(
       "More negative values indicate drier soil conditions."
     )
   ) +
-  guides(
-    colour = guide_legend(
-      order = 1,
-      nrow = 1,
-      byrow = TRUE
-    )
-  ) +
-  theme_classic(base_size = 13) +
+  general_plot_theme +
   theme(
-    plot.title = element_text(
-      face = "bold",
-      size = 16
-    ),
-    plot.subtitle = element_text(
-      colour = "grey30",
-      margin = margin(b = 10)
-    ),
-    strip.text = element_text(
-      face = "bold",
-      size = 12
-    ),
-    strip.background = element_blank(),
-    legend.position = "top",
-    legend.box = "vertical",
-    legend.justification = "left",
-    axis.text.x = element_text(
-      angle = 0,
-      hjust = 0.5
-    ),
-    panel.spacing = grid::unit(1, "lines"),
-    plot.caption = element_text(
-      colour = "grey40",
-      hjust = 0
-    )
+    legend.position = "inside", legend.position.inside = c(0.01,0.01),  legend.justification = c(0,0),
+    legend.direction = "vertical", legend.box = "vertical"
   )
 
 p1
@@ -611,16 +572,17 @@ The graphic displays the soil matric potential at three different locations in t
 
 As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
 
-The following graphic compares tree water deficit measurements of 2025 with 2026.
-
 ```{R}
+#| label: fig-twd
+#| fig-cap: "Seasonal dynamics of tree water deficit at different landscape positions (above Aare river) in 2025 and 2026."
+#| fig-width: 8
+#| fig-height: 5
 df_TWD_blog <- df_TWD |>
   mutate(
     year = factor(
       lubridate::year(date),
       levels = c(2025, 2026)
     ),
-
     # Place both years on the same seasonal x-axis
     plot_date = as.Date(
       sprintf(
@@ -629,15 +591,13 @@ df_TWD_blog <- df_TWD |>
         lubridate::day(date)
       )
     ),
-
     # Extract site identifier and define panel order
     site = stringr::str_sub(tree_name, -2, -1),
 
-    site = factor(
+    plot = factor(
       site,
-      levels = c("P1", "P2", "P3")
+      levels = c("P3", "P2", "P1", "G1"), labels = c("High","Mid","Low", "G1")
     ),
-
     # Short common names for clearer facet labels
     species = factor(
       tree_genus_species,
@@ -653,7 +613,7 @@ df_TWD_blog <- df_TWD |>
   ) |>
   filter(
     year %in% c("2025", "2026"),
-    site %in% c("P1", "P2", "P3"),
+    plot %in% c("High","Mid","Low"),
     tree_genus_species %in% c(
       "Abies alba",
       "Fagus sylvatica"
@@ -665,6 +625,7 @@ df_TWD_blog <- df_TWD |>
     plot_date,
     year,
     site,
+    plot,
     species
   ) |>
   summarise(
@@ -679,7 +640,6 @@ p_twd_blog <- ggplot(
     x = plot_date,
     y = TWD_mean,
     colour = year,
-    linetype = year,
     group = year
   )
 ) +
@@ -689,21 +649,13 @@ p_twd_blog <- ggplot(
     na.rm = TRUE
   ) +
   facet_grid(
+    cols = vars(plot),
     rows = vars(species),
-    cols = vars(site),
     scales = "fixed"
   ) +
   scale_colour_manual(
-    values = c(
-      "2025" = "#6F6F6F",
-      "2026" = "#0072B2"
-    )
-  ) +
-  scale_linetype_manual(
-    values = c(
-      "2025" = "dashed",
-      "2026" = "solid"
-    )
+    values = c(highlight_colours, c("2025" = "darkgrey")),
+    drop = FALSE
   ) +
   scale_x_date(
     limits = as.Date(c("2000-04-01", "2000-10-31")),
@@ -713,14 +665,9 @@ p_twd_blog <- ggplot(
   ) +
   labs(
     title = "Tree water deficit across species and sites",
-    subtitle = paste(
-      "Seasonal development in 2025 and 2026.",
-      "Solid lines show 2026; dashed lines show 2025."
-    ),
     x = NULL,
     y = "Mean tree water deficit (\u00b5m)",
-    colour = "Year",
-    linetype = "Year",
+    colour = NULL,
     caption = paste(
       "Silver fir corresponds to Abies alba; European beech to Fagus sylvatica.\nHigher values indicate greater depletion of water stored in the elastic",
       "tissues of the stem."
@@ -730,39 +677,10 @@ p_twd_blog <- ggplot(
     colour = guide_legend(order = 1),
     linetype = guide_legend(order = 1)
   ) +
-  theme_classic(base_size = 13) +
+  general_plot_theme +
   theme(
-    plot.title = element_text(
-      face = "bold",
-      size = 16
-    ),
-    plot.subtitle = element_text(
-      colour = "grey30",
-      margin = margin(b = 10)
-    ),
-    strip.text = element_text(
-      face = "bold",
-      size = 11
-    ),
-    strip.background = element_blank(),
-    legend.position = "top",
-    legend.justification = "left",
-    axis.text.x = element_text(
-      angle = 0,
-      hjust = 0.5
-    ),
-    panel.spacing = grid::unit(1, "lines"),
-    plot.caption = element_text(
-      colour = "grey40",
-      hjust = 0,
-      margin = margin(t = 10)
-    ),
-    plot.margin = margin(
-      t = 10,
-      r = 20,
-      b = 10,
-      l = 15
-    )
+    legend.position = "inside", legend.position.inside = c(0.01,1.0),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
   )
 
 p_twd_blog

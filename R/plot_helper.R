@@ -20,3 +20,37 @@ scale_y_logModulus <- function(...) {
                                       (-1)*(10^(-0:10) %*% t(c(1:9)) )),
                      ...)
 }
+
+
+general_plot_theme <- list(
+  theme_classic(base_size = 13),
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      colour = "grey30",
+      margin = margin(b = 10)
+    ),
+    strip.text = element_text(
+      face = "bold",
+      size = 12
+    )),
+  theme(
+    strip.background = element_blank(),
+    panel.spacing = grid::unit(1, "lines"),
+    axis.text.x = element_text(
+      angle = 0,
+      hjust = 0.5
+    ),
+    plot.caption = element_text(
+      colour = "grey40",
+      hjust = 0
+    )),
+  theme(
+    legend.position = "top",
+    legend.box = "vertical",
+    legend.justification = "left"
+  )
+)
