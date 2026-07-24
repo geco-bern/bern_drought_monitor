@@ -1,23 +1,49 @@
 # Download soil water potential and tree water deficit data
 # from TreeNet data portal
 # retrieve daily SWP and TWD
+
+# For tree water deficit, L2 data quality was chosen 
+# while for soil water potential, L0 data quality was chosen 
+
+# Below code performs a quality check removing TWD outliers above 500um
+# and removign SWP outliers below 6000 kPa
+
+
 # load libraries
 library(readr)
 library(dplyr)
 library(lubridate)
 library(ggplot2)
 
+# A) Retrieve SWP Daily data and TWD data
 
-# Retrieve SWP Daily data
-# Read in SWP data from the Drakau site
+# manually download the files and store them so that they can be read in by part B)
 
-metadata_drakau <- read_csv("~/data-raw/drakau_SWP/tn_metadata_L0_2025-01-01_2026-07-17_68c1a39f-291f-47f6-8fc6-09a2d414bf03.csv")
+
+# B) Read in SWP data from the Drakau site and TWD data
+# B1) Read raw data and metadata
+metadata_drakau <- read_csv(
+  "~/data-raw/drakau_SWP/tn_metadata_L0_2025-01-01_2026-07-17_68c1a39f-291f-47f6-8fc6-09a2d414bf03.csv"
+)
 
 SWPdata_drakau <- read_csv(
   "~/data-raw/drakau_SWP/tn_timeseries_L0_2025-01-01_2026-07-17_68c1a39f-291f-47f6-8fc6-09a2d414bf03.csv"
 )
-#SWP threshold
-SWP_threshold <- -6000
+
+# B2) Read raw data and metadata
+metadata_TWD <- read_csv(
+  "~/data-raw/drakau_TWD/tn_metadata_L2_2025-01-01_2026-07-17_1f2a1587-bc94-4b55-9ec0-a83c76c0459d.csv",
+  show_col_types = FALSE
+)
+
+raw_TWD <- read_csv(
+  "~/data-raw/drakau_TWD/tn_timeseries_L2_2025-01-01_2026-07-17_1f2a1587-bc94-4b55-9ec0-a83c76c0459d.csv",
+  show_col_types = FALSE
+)
+
+
+# C) Process SWP Daily data
+SWP_threshold <- -6000 # kPa
 
 # join data sets
 df_drakau <- SWPdata_drakau |>
@@ -53,25 +79,15 @@ df_drakau_swp_daily <- df_drakau_daily |>
   left_join(metadata_drakau, by = "series_id")
 
 
-
 # save csv files daily data from april to october
 write_csv(
   df_drakau_swp_daily,
-  "~/data/daily_SWP_drakau.csv"
+  here("data-dynamic", "daily_SWP_drakau.csv"),
 )
 
-# Retrieve daily TWD data
-# read timeseries and metadata
-# Read raw data and metadata
-raw_TWD <- read_csv(
-  "~/data-raw/drakau_TWD/tn_timeseries_L2_2025-01-01_2026-07-17_1f2a1587-bc94-4b55-9ec0-a83c76c0459d.csv",
-  show_col_types = FALSE
-)
 
-metadata_TWD <- read_csv(
-  "~/data-raw/drakau_TWD/tn_metadata_L2_2025-01-01_2026-07-17_1f2a1587-bc94-4b55-9ec0-a83c76c0459d.csv",
-  show_col_types = FALSE
-)
+# C) Process daily TWD data
+TWD_threshold <- 500 # um
 
 # Correct species metadata
 metadata_clean <- metadata_TWD |>
@@ -92,9 +108,6 @@ metadata_clean <- metadata_TWD |>
     site = stringr::str_extract(tree_name, "(G1|P1|P2|P3)$")
   ) |>
   distinct(series_id, .keep_all = TRUE)
-
-# TWD threshold
-TWD_threshold <- 500
 
 # Join metadata and calculate daily values
 df_daily_TWD_clean <- raw_TWD |>
@@ -145,5 +158,5 @@ df_daily_TWD_clean <- raw_TWD |>
 
 write_csv(
   df_daily_TWD_clean,
-  path.expand("~/data/daily_TWD_drakau.csv")
+  here("data-dynamic", "daily_TWD_drakau.csv"),
 )
