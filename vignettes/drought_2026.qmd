@@ -1,5 +1,5 @@
 ---
-title: "Current drought situation in Bern, Switzerland"
+title: "Bern drought monitor"
 author: "Benjamin Stocker, Fabian Bernhard & Sascha Friedli"
 date: today
 format:
@@ -95,15 +95,21 @@ vhi_stats <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
 
 Drought conditions have intensified across parts of Switzerland during spring and early summer 2026. A combination of below-average precipitation and increasing atmospheric evaporative demand has lead to signals of increasing drought stress since April.
 
-This update combines several complementary indicators to assess the current drought situation: the potential cumulative water deficit derived from meteorological observations and satellite-based vegetation health metrics from swisstopo. Together, this provides insights into how the ongoing dry conditions affect the atmosphere, vegetation, and forest ecosystems.
+This drought monitor combines several complementary indicators to assess the current drought situation: 
+  - the potential cumulative water deficit (derived from local meteorological observations or ERA5-Land),
+  - local soil water potential observations
+  - tree water deficit observations
+  - and satellite-based vegetation health metrics from swisstopo. 
 
-The figures below summarize the current state of drought stress around Bern and across Switzerland as of today (see date in header).
+The combinations of these indicators provides insights into the severity of ongoing dry conditions with respect to the atmosphere, the soil, and the vegetation.
+
+The figures below allow to monitor the current drought stress around Bern and across Switzerland as of today (see date in header).
 
 ## Meteorological drought
 
-To assess current meteorological drought conditions, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
+To put current meteorological drought conditions in perspective, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
 
-PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The primary estimate uses Priestley–Taylor PET based on estimated net radiation. As a sensitivity analysis, we additionally calculate PCWD using FAO56 reference evapotranspiration based on Penman-Monteith PET (not shown, but yielding consistent results).
+PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The estimate of PCWD uses Priestley–Taylor PET based on estimated net radiation. (The sensitivity of the results to the choice of PET calculation was assessed by additionally estimating PCWD with the Penman-Monteith (FAO56) and Thornthwaite methods. Results were consistent.)
 
 ### Potential cumulative water deficit (PCWD)
 
@@ -239,7 +245,7 @@ p_fao
 ``` 
 -->
 
-The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
+The sensitivity analysis based on FAO56 PET indicated a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
 
 For a larger context PCWD was calculated with the Thornthwaite method to calculate the PET and PCWD over the entire record.
 
@@ -369,13 +375,13 @@ p_thorn <- ggplot() +
 p_thorn
 ```
 
-The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+The Thornthwaite-based reconstruction allows to extend the PCWD record back to 1864 and thus provides a longer historical context for the current drought. Although the Thornthwaite method generally produces lower absolute PCWD values than the Priestley–Taylor method, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
 
 #### Spatial visualization of current PCWD
 
-To illustrate the spatial extent current meteorological drought conditions, we derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
 
-Below map shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of the region.
+Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date and the temporal evolution of the region.
 
 ```{R plot ERA5-Land}
 #| label: fig-pcwd-ERA5Land-map
@@ -463,15 +469,7 @@ leaflet() |>
   )
 ```
 
-## 2. Soil moisture
-
-The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
-
-[Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
-
-For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
-
-### Soil water potential Bremgartenwald
+## Soil water
 
 At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil. 
 
@@ -610,21 +608,7 @@ p1
 The graphic displays the soil matric potential at three different locations in the Bremgartenwald. P1 is the site that is closest to the Aare, P2 is further away from the Aare and P3 is the site furthest away from the Aare. In general the the further away the site is from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. The depth of the measurement also influences how dry the soil becomes. The further down in the soil, the lower the maximum dryness. 
 
 
-## 3. Tree water deficit
-
-TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
-
-Currently, the highest proportions of trees classified as experiencing high or very high water deficit are found among Scots pine (Pinus sylvestris), silver fir (Abies alba), European ash (Fraxinus excelsior), and downy oak (Quercus pubescens). In contrast, species such as hazel (Corylus avellana) and Douglas fir (Pseudotsuga menziesii) still show a comparatively large share of individuals without measurable water stress.
-
-Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
-
-![TreeNet TWD Overview](https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg)
-
-On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
-
-[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
-
-### Tree water deficit Bremgartenwald
+## Tree water deficit
 
 As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
 
@@ -842,7 +826,7 @@ leaflet() |>
     group = "VHI"
   ) |>
   addLayersControl(
-    baseGroups = c("World Imagery", "World Topo"),
+    baseGroups = c("World Topo", "World Imagery"),
     overlayGroups = c("VHI"),
     position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
@@ -877,10 +861,41 @@ vhi_stats |>
   mutate(across(where(is.numeric), ~ round(.x, 1)))
 ```
 
-## 5. Current drought status summary
+## Current drought status summary
 
 Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
 
 This signal is reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
 Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress.
+
+
+
+## Appendix
+
+Looking beyond the Bern area, below appendices provide further resources on national level for Switzerland.
+
+
+## Appendix A - Soil water across Switzerland (SwissSMEX)
+The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
+
+[Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
+
+For the SwissSMEX site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
+
+
+## Appendix B - Tree water deficit across Switzerland (TreeNet)
+
+TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
+
+Currently, the highest proportions of trees classified as experiencing high or very high water deficit are found among Scots pine (Pinus sylvestris), silver fir (Abies alba), European ash (Fraxinus excelsior), and downy oak (Quercus pubescens). In contrast, species such as hazel (Corylus avellana) and Douglas fir (Pseudotsuga menziesii) still show a comparatively large share of individuals without measurable water stress.
+
+Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
+
+![TreeNet TWD Overview](https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg)
+
+On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
+
+[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
+
+
