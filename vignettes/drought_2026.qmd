@@ -214,10 +214,7 @@ p_fao <- ggplot() +
     title = "Potential cumulative water deficit",
     subtitle = paste0(
       "Bern-Zollikofen, FAO56 PET (",
-      pcwd_year_range[1],
-      "–",
-      pcwd_year_range[2],
-      ")"
+      min(meteo_pcwd_PT$year, na.rm = TRUE), "–", max(meteo_pcwd_PT$year, na.rm = TRUE), ")"
     )
   ) +
   theme_bw()
