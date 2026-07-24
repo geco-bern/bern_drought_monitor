@@ -22,8 +22,6 @@ library(terra)
 library(lubridate)
 library(base64enc)
 
-source(here::here("R", "plot_helper.R"))
-
 
 # A) (optionally) update underlying data set with freshly downloaded data
 dir.create(here("data-dynamic"), showWarnings = FALSE)
@@ -90,6 +88,24 @@ df_TWD <- read_csv(here("data-dynamic","daily_TWD_drakau.csv"))
 
 vhi_plot_data <- read_csv(here("data-dynamic", "swisseo_vhi_bern_plot_data.csv"))
 vhi_stats <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
+
+
+# C) Define palette:
+# Klassenfarben gemäss swissEO
+vhi_cols <- c(
+  "#b56a29", # Extremely stressed
+  "#ce8540", # Very stressed
+  "#f5cd85", # Stressed
+  "#fff5ba", # Slightly stressed
+  "#cbffca", # Normal
+  "#52bd9f", # Good
+  "#0470b0"  # Excellent
+)
+
+vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
+
+# and load other plot helpers:
+source(here::here("R", "plot_helper.R"))
 ```
 
 ## Overview
@@ -300,9 +316,19 @@ cwd_ERA5Land_df <- dplyr::bind_rows(
 date_to_plot <- "2026-07-15"
 raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
 
-pal_ERA5LAND_PCWD <- colorNumeric(
-  palette = "viridis",
+# Define similar palette to vhi:
+# CONTINUOUS PALETTE:
+# pal_ERA5LAND_PCWD <- colorNumeric(
+#   #palette = "viridis",
+#   palette = rev(vhi_cols),
+#   domain = values(raster_to_plot_ERA5LAND_PCWD),
+#   na.color = "transparent"
+# )
+# Discretized PALETTE:
+pal_ERA5LAND_PCWD <- colorBin(
+  palette = rev(vhi_cols),
   domain = values(raster_to_plot_ERA5LAND_PCWD),
+  bins = 15,
   na.color = "transparent"
 )
 
@@ -352,7 +378,7 @@ leaflet() |>
                   .leaflet-control-layers { width:220px !important; box-sizing:border-box; }
                   </style>", 
                   sprintf(
-                    "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Time series of region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
+                    "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
       220-16, img_uri)) # 220px - 2*8px padding
   ) |>
   addLegend(
@@ -610,19 +636,6 @@ vhi_rast <- terra::rast(
 
 # Für leaflet nach WGS84 transformieren
 vhi_rast_wgs84 <- terra::project(vhi_rast, "EPSG:4326", method = "near")
-
-# Klassenfarben gemäss swissEO
-vhi_cols <- c(
-  "#b56a29", # Extremely stressed
-  "#ce8540", # Very stressed
-  "#f5cd85", # Stressed
-  "#fff5ba", # Slightly stressed
-  "#cbffca", # Normal
-  "#52bd9f", # Good
-  "#0470b0"  # Excellent
-)
-
-vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
 
 pal_vhi <- colorBin(
   palette = vhi_cols,
