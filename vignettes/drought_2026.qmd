@@ -19,6 +19,8 @@ library(ggplot2)
 library(scales)
 library(leaflet)
 library(terra)
+library(lubridate)
+library(base64enc)
 
 current_year <- 2026
 
@@ -60,8 +62,23 @@ if (FALSE) { # NOTE: activate this for automatic update
               overwrite = TRUE)
   }
 }
-
-
+# ERA5-Land:
+if (FALSE) { # NOTE: activate this for automatic update
+  source(here("analysis", "04_calc_pcwd_era5land.R"))
+  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+} else {
+  for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionBern.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc"
+                     )){
+    file.copy(from = here("data/",         filename), 
+              to   = here("data-dynamic/", filename), 
+              overwrite = TRUE)
+  }
+}
 
 
 # B) Load (updated) data
@@ -96,6 +113,8 @@ PCWD was calculated from daily precipitation minus potential evapotranspiration 
 Potential cumulative water deficit (PCWD) describes the accumulated atmospheric water demand that is not compensated by precipitation. It is calculated from the daily water balance between precipitation and potential evapotranspiration (PET). Increasing PCWD values indicate increasing drought stress, while decreases indicate periods where precipitation partly or fully compensates the accumulated deficit.
 
 :::
+
+#### Historic context of current PCWD
 
 ```{r}
 #| label: fig-pcwd
@@ -351,6 +370,98 @@ p_thorn
 ```
 
 The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+
+#### Spatial visualization of current PCWD
+
+To illustrate the spatial extent current meteorological drought conditions, we derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+
+Below map shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of the region.
+
+```{R plot ERA5-Land}
+#| label: fig-pcwd-ERA5Land-map
+#| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestlye Taylor PET)."
+#| fig-width: 8
+#| fig-height: 5
+
+
+# laad data for ERA5-Land map and ERA5-Land timeseries
+cwd_ERA5Land <- terra::rast(
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc") # or "regionBern.nc" or "regionEUROPE.nc"
+)
+cwd_ERA5Land_df <- dplyr::bind_rows(
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
+) |> mutate(time = lubridate::ymd(time))
+
+# plot ERA5-Land map
+date_to_plot <- "2026-07-15"
+raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
+
+pal_ERA5LAND_PCWD <- colorNumeric(
+  palette = "viridis",
+  domain = values(raster_to_plot_ERA5LAND_PCWD),
+  na.color = "transparent"
+)
+
+# Prepare the regional average time series plot (will be embedded into the map)
+cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> 
+  group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm)) |> 
+  slice_head(n = -1) # drop last line which appears to be set to pcwd_mm = 0
+### | fig-cap: "Temporal evolution of the average potential cumulative water deficit across central Europe (Priestlye Taylor PET) derived from ERA5-Land reanalysis data."
+### | fig-width: 8
+### | fig-height: 2
+plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
+  geom_line() + 
+  theme_bw() + 
+  labs(x=NULL, y= "Region average of PCWD (mm)") + 
+  geom_vline(xintercept = ymd(date_to_plot), color = "red") +
+  scale_x_date(NULL, date_breaks = "2 month", date_minor_breaks = "1 month", date_labels = "%b") + # \n%Y
+  geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
+            x = ymd(date_to_plot), y = Inf, 
+            label = "Map\ndate", color = "red", vjust=1.2, hjust = -0.5, angle = 270) # vjust=-0.2
+
+# render the plot to a PNG and encode as data URI for embedding as inset into map
+tmp_png <- tempfile(fileext = ".png")
+ggsave(filename = tmp_png, plot = plt_ERA5Land_temp + labs(y=NULL),
+       width = 600, height = 220, units = "px", dpi = 150)
+img_uri <- base64enc::dataURI(file = tmp_png, mime = "image/png")
+
+# generate map as leaflet
+leaflet() |>
+  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
+  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
+  addRasterImage(
+    raster_to_plot_ERA5LAND_PCWD,
+    colors = pal_ERA5LAND_PCWD,
+    opacity = 0.75,
+    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
+    attribution = paste(
+      "\n&copy; Copernicus Climate Change Service information (2019). Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 16-Jul-2026) Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
+    )
+  ) |>
+  addLayersControl(
+    position = "topleft",
+    baseGroups = c("World Topo", "World Imagery"),
+    overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addControl(
+    position = "topleft",
+    html = paste0("<style>
+                  .leaflet-control-layers { width:220px !important; box-sizing:border-box; }
+                  </style>", 
+                  sprintf(
+                    "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Time series of region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
+      220-16, img_uri)) # 220px - 2*8px padding
+  ) |>
+  addLegend(
+    position = "topright",
+    pal = pal_ERA5LAND_PCWD, 
+    values = values(raster_to_plot_ERA5LAND_PCWD), 
+    opacity = 1,
+    title = "PCWD (mm)"
+  )
+```
 
 ## 2. Soil moisture
 
