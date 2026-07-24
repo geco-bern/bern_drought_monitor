@@ -876,12 +876,14 @@ Both indices indicate that the ecosystem is currently in a state of elevated dro
 Looking beyond the Bern area, below appendices provide further resources on national level for Switzerland.
 
 
-## Appendix A - Soil water across Switzerland (SwissSMEX)
-The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
+## Appendix A - Soil water across Switzerland (SwissSMEX and SwissSPOT)
+The SwissSMEX and SwissSPOT monitoring networks provide continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
 
 [Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
 
 For the SwissSMEX site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
+
+[Open SwissSPOT Monitoring Dashboard](https://www.wsl.ch/de/projekte/swissspot-swiss-forest-soil-water-potential-network/){.btn .btn-primary}
 
 
 ## Appendix B - Tree water deficit across Switzerland (TreeNet)
