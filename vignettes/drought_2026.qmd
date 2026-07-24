@@ -68,7 +68,11 @@ if (FALSE) { # NOTE: activate this for automatic update
   # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
 } else {
   for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc",
-                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc"
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionBern.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc",
+                     "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc"
                      )){
     file.copy(from = here("data/",         filename), 
               to   = here("data-dynamic/", filename), 
@@ -371,7 +375,7 @@ The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and p
 
 To illustrate the spatial extent current meteorological drought conditions, we derived potential cumulative water deficit (PCWD) from ERA5-Land-T data (10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
 
-Below two figures shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of its average for the given year.
+Below map shows the spatial distribution of the PCWD across a larger regional extent at the indicated date and the temporal evolution of the region.
 
 ```{R plot ERA5-Land}
 #| label: fig-pcwd-ERA5Land-map
@@ -382,14 +386,15 @@ Below two figures shows the spatial distribution of the PCWD across a larger reg
 
 # laad data for ERA5-Land map and ERA5-Land timeseries
 cwd_ERA5Land <- terra::rast(
-  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc") # or "regionBern.nc" or "regionEUROPE.nc"
 )
-cwd_ERA5Land_df <- tidync::hyper_tibble(
-  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc") # or "regionEUROPE.nc"
+cwd_ERA5Land_df <- dplyr::bind_rows(
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
 ) |> mutate(time = lubridate::ymd(time))
 
 # plot ERA5-Land map
-date_to_plot <- "2026-06-30"
+date_to_plot <- "2026-07-15"
 raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
 
 pal_ERA5LAND_PCWD <- colorNumeric(
@@ -410,15 +415,15 @@ plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
   theme_bw() + 
   labs(x=NULL, y= "Region average of PCWD (mm)") + 
   geom_vline(xintercept = ymd(date_to_plot), color = "red") +
+  scale_x_date(NULL, date_breaks = "2 month", date_minor_breaks = "1 month", date_labels = "%b") + # \n%Y
   geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
             x = ymd(date_to_plot), y = Inf, 
-            label = "Map\ndate", color = "red", vjust=0.5, hjust = 0, angle = 270) # vjust=-0.2
+            label = "Map\ndate", color = "red", vjust=1.2, hjust = -0.5, angle = 270) # vjust=-0.2
 
 # render the plot to a PNG and encode as data URI for embedding as inset into map
 tmp_png <- tempfile(fileext = ".png")
-png(tmp_png, width = 600, height = 220, res = 150)
-print(plt_ERA5Land_temp + labs(y=NULL))
-dev.off();
+ggsave(filename = tmp_png, plot = plt_ERA5Land_temp + labs(y=NULL),
+       width = 600, height = 220, units = "px", dpi = 150)
 img_uri <- base64enc::dataURI(file = tmp_png, mime = "image/png")
 
 # generate map as leaflet
@@ -431,7 +436,7 @@ leaflet() |>
     opacity = 0.75,
     group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
     attribution = paste(
-      "\n&copy; Copernicus Climate Change Service information &lt;2019&gt;. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
+      "\n&copy; Copernicus Climate Change Service information (2019). Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 16-Jul-2026) Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
     )
   ) |>
   addLayersControl(
@@ -457,21 +462,6 @@ leaflet() |>
     title = "PCWD (mm)"
   )
 ```
-
-::: {.callout-note}
-## Source: ERA5-Land data
-
-ERA5-Land data is provided by the Copernicus programme and was downloaded through the Copernicus Climate Change Service (C3S)
-
-- Copernicus Climate Change Service (C3S)(2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 31-Mar-2025)
-
-- Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.
-
-Data description is available in:
-Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 31-Mar-2025)
-
-
-:::
 
 ## 2. Soil moisture
 

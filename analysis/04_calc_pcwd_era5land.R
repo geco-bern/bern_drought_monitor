@@ -58,40 +58,57 @@ dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 # ssh ubelix
 # cd ~/GitHub/geco-bern/cwd_global/;
 # jid01=$(sbatch --parsable src/ERA5Land-2-BernArea/main-noNA_01tidy.sh)
-# jid02=$(sbatch --parsable src/ERA5Land-2-BernArea/main-noNA_02pcwd.sh --dependency=afterok:$jid01)
-# jid03=$(sbatch --parsable src/ERA5Land-2-BernArea/main-noNA_03netcdf.sh --dependency=afterok:$jid02)
+# jid02=$(sbatch --dependency=afterok:$jid01 --parsable src/ERA5Land-2-BernArea/main-noNA_02pcwd.sh)
+# jid03=$(sbatch --dependency=afterok:$jid02 --parsable src/ERA5Land-2-BernArea/main-noNA_03netcdf.sh)
 
 # Use previously computed (global) PCWD:
 # 1c) DO MANUALLY:
 
 # ssh ubelix
 # cd /storage/capacity/occr_geco/data_2/archive/era5land_munoz-sabater_2021/data_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf/
-# cd /storage/capacity/occr_geco/data_2/scratch/fbernhard/ERA5Land-T_2000-2026_run2026-07-16_BernArea_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf/
+# cd /storage/capacity/occr_geco/data_2/scratch/fbernhard/ERA5Land-T_2000-2026_run2026-07-16_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf/
 # srun --account=invest --qos=job_icpu-stocker --ntasks=1 --cpus-per-task=8 --mem-per-cpu=8G --job-name="crop_ERA5L_CWD" --time=1:00:00 --pty bash
 # module load netCDF
 # module load CDO
 # ncdump -hcs data_derived_03_daily_pcwd_v2-doy_2026_r-generated.nc
 # cdo sinfov data_derived_03_daily_pcwd_v2-doy_2026_r-generated.nc
 # cdo sellonlatbox,6.9,7.7,46.7,47.2 data_derived_03_daily_pcwd_v2-doy_2026_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc
+# cdo sellonlatbox,5.9,10.5,45.8,47.9 data_derived_03_daily_pcwd_v2-doy_2026_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc
 # cdo sellonlatbox,-8.7,24.8,36.5,54.8 data_derived_03_daily_pcwd_v2-doy_2026_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc
+# ( possibly also for other years:
+#   cdo sellonlatbox,6.9,7.7,46.7,47.2 data_derived_03_daily_pcwd_v2-doy_2025_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionBern.nc
+#   cdo sellonlatbox,5.9,10.5,45.8,47.9 data_derived_03_daily_pcwd_v2-doy_2025_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc
+#   cdo sellonlatbox,-8.7,24.8,36.5,54.8 data_derived_03_daily_pcwd_v2-doy_2025_r-generated.nc ~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc
 # # the above takes about 10 seconds for 1 file
 # ncdump -hcs ~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc
 # ncdump -hcs ~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc
-# exit
+# exit # srun-exit
+# exit # ssh-exit
 
 # Transfer files from UBELIX to repository:
 # 1d) DO MANUALLY:
-# rsync -avz --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
 # ncdump -hcs data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc
-# rsync -avz --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# ncdump -hcs data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc
 # ncdump -hcs data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc
 
+# (Possibly also for other years:)
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionBern.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+# rsync -avz --progress --no-owner --no-group fb24k097@submit04.unibe.ch:~/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc ~/GitHub/geco-bern/drought_switzerland_blog/data/ERA5LandCWD/
+
+
 cwd_ERA5Land <- terra::rast(
-  here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc")
+  here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")
   # here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc")
 )
-cwd_ERA5Land_df <- tidync::hyper_tibble(
-  here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc")
+cwd_ERA5Land_df <- dplyr::bind_rows(
+  tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")),
+  tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc")),
+  # tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc")),
+  # tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc")),
   # here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc")
 ) |> mutate(time = lubridate::ymd(time))
 # terra::plot(cwd_ERA5Land[[167]])
@@ -101,7 +118,7 @@ cwd_ERA5Land_df <- tidync::hyper_tibble(
 
 # a) plot some dates:
 # dates_to_plot <- c("2024-06-15","2024-07-15","2024-08-15","2024-09-15")
-dates_to_plot <- c("2026-05-15","2026-06-15","2026-07-15")
+dates_to_plot <- c("2026-05-15","2026-06-15","2026-07-15","2026-07-16")
 # which(time(cwd_ERA5Land) %in% c("2024-06-15","2024-07-15","2024-08-15","2024-09-15"))
 rng <- range(values(cwd_ERA5Land), na.rm = TRUE)
 plt_ERA5Land_map <- terra::plot(
