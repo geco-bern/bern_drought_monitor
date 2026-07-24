@@ -127,7 +127,7 @@ Potential cumulative water deficit (PCWD) describes the accumulated atmospheric 
 ```{r}
 #| label: fig-pcwd
 #| warning: false
-#| fig-cap: Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis.
+#| fig-cap: Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate.
 #| fig-height: 5
 #| fig-width: 8
 
@@ -384,7 +384,7 @@ Below map shows the spatial distribution of the PCWD across Switzerland at the i
 
 ```{R plot ERA5-Land}
 #| label: fig-pcwd-ERA5Land-map
-#| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestlye Taylor PET)."
+#| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestley Taylor PET)."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -412,9 +412,6 @@ pal_ERA5LAND_PCWD <- colorNumeric(
 cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> 
   group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm)) |> 
   slice_head(n = -1) # drop last line which appears to be set to pcwd_mm = 0
-### | fig-cap: "Temporal evolution of the average potential cumulative water deficit across central Europe (Priestlye Taylor PET) derived from ERA5-Land reanalysis data."
-### | fig-width: 8
-### | fig-height: 2
 plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
   geom_line() + 
   theme_bw() + 
@@ -471,11 +468,11 @@ leaflet() |>
 
 ## Soil water
 
-At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
+At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil (soil water potential) at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
 
 ```{R}
 #| label: fig-swp
-#| fig-cap: "Seasonal dynamics of soil matric potential at different landscape positions (above Aare river) and soil depths in 2025 and 2026."
+#| fig-cap: "Seasonal dynamics of soil water potential at different landscape positions (above Aare river) and soil depths in 2025 and 2026."
 #| fig-width: 8
 #| fig-height: 6.4
 df_SWP_plot <- df_SWP |>
@@ -548,9 +545,9 @@ p1 <-
   ) +
   scale_y_logModulus() + 
   labs(
-    title = "Seasonal dynamics of soil matric potential",
+    title = "Seasonal dynamics of soil water potential",
     x = NULL,
-    y = "Soil matric potential (kPa)",
+    y = "Soil water potential (kPa)",
     colour = NULL,
     caption = paste(
       "More negative values indicate drier soil conditions."
@@ -565,12 +562,14 @@ p1 <-
 p1
 ```
 
-The graphic displays the soil matric potential at three different locations in the Bremgartenwald. P1 is the site that is closest to the Aare, P2 is further away from the Aare and P3 is the site furthest away from the Aare. In general the the further away the site is from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. The depth of the measurement also influences how dry the soil becomes. The further down in the soil, the lower the maximum dryness. 
+In general, the further away from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. Tree water use can also be different with soil depth depending on the root distributions. Typically, deeper soil layers remain wetter due to reduced root water uptake. However, in the above measurements the main dry-out of the soil in 2025 and 2026 was similar across all soil depths (except for the position close to the Aare).
+
+In 2026, soil water dry-out started much earlier than in 2025.
 
 
 ## Tree water deficit
 
-As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
+As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential (shown above) describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
 
 ```{R}
 #| label: fig-twd
@@ -664,7 +663,7 @@ p_twd_blog <- ggplot(
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   labs(
-    title = "Tree water deficit across species and sites",
+    title = "Tree water deficit across species",
     x = NULL,
     y = "Mean tree water deficit (\u00b5m)",
     colour = NULL,
@@ -686,7 +685,9 @@ p_twd_blog <- ggplot(
 p_twd_blog
 ```
 
-For the tree water deficit measurements a similar pattern to the soil water potential is visible across sites. The site that is furthest away from the Aare shows the strongest tree water deficit. 
+For the tree water deficit measurements a similar pattern to the soil water potential is visible with distance to the Aare. The location that is furthest away from the Aare shows the strongest tree water deficit. 
+
+In 2026, tree water deficit increases earlier than in 2025.
 
 ## Vegetation Health Index (VHI)
 
@@ -769,18 +770,9 @@ leaflet() |>
 ```
 
 
-### Overview statistics
-```{r}
-#| label: tbl-vhi-stats
-#| echo: false
-
-vhi_stats |>
-  mutate(across(where(is.numeric), ~ round(.x, 1)))
-```
-
 ## Current drought status summary
 
-Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
+Taken together, the different indicators paint a consistent picture. Spring and early summer of 2026 were characterized by increasing atmospheric water demand and below-average moisture availability. Compared to 2025, these drought indicators increased earlier than 2025.
 
 This signal is reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
