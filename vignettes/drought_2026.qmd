@@ -54,9 +54,10 @@ if (FALSE) { # NOTE: activate this for automatic update (TODO: automatize all ma
 # SwissEOVHI:
 if (TRUE) { # NOTE: activate this for automatic update
   source(here("analysis", "02_swissEOVHI.R"))
-  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+  # creates: data-dynamic/swisseo_vhi_bern_plot_data_3dates.tif and swisseo_vhi_bern_stats.csv
 } else {
-  for (filename in c("swisseo_vhi_bern_plot_data.csv", "swisseo_vhi_bern_stats.csv")){
+  for (filename in c("swisseo_vhi_bern_stats.csv",
+                     "swisseo_vhi_bern_plot_data_3dates.tif")){
     file.copy(from = here("data/",         filename), 
               to   = here("data-dynamic/", filename), 
               overwrite = TRUE)
@@ -87,8 +88,8 @@ meteo_pcwd <- read_csv(here("data-dynamic", "Bern_pcwd_daily.csv"))
 df_SWP <- read_csv(here("data-dynamic","daily_SWP_drakau.csv"))
 df_TWD <- read_csv(here("data-dynamic","daily_TWD_drakau.csv"))
 
-vhi_plot_data <- read_csv(here("data-dynamic", "swisseo_vhi_bern_plot_data.csv"))
-vhi_stats <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
+vhi_rast_wgs84 <- terra::rast(here("data-dynamic", "swisseo_vhi_bern_plot_data_3dates.tif"))
+vhi_stats      <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
 
 
 # C) Define palette:
@@ -660,20 +661,6 @@ The map below shows the most recent VHI data available for the city of Bern regi
 #| fig-width: 8
 #| fig-height: 5
 
-# VHI auf gültigen Bereich begrenzen
-vhi_plot_data <- vhi_plot_data |>
-  mutate(vhi = ifelse(vhi < 0 | vhi > 100, NA, vhi))
-
-# Aus x/y/vhi wieder ein Raster machen
-vhi_rast <- terra::rast(
-  vhi_plot_data |> select(x, y, vhi),
-  type = "xyz",
-  crs = "EPSG:2056"
-)
-
-# Für leaflet nach WGS84 transformieren
-vhi_rast_wgs84 <- terra::project(vhi_rast, "EPSG:4326", method = "near")
-
 pal_vhi <- colorBin(
   palette = vhi_cols,
   domain = terra::values(vhi_rast_wgs84),
@@ -682,26 +669,37 @@ pal_vhi <- colorBin(
   right = FALSE
 )
 
-leaflet() |>
+raster_groups <- paste0("VHI ", time(vhi_rast_wgs84))
+
+
+vhi_map <- leaflet() |>
   addMapPane("basemap", zIndex = 1) |> # NOTE: pane is a fix to better control order
   addProviderTiles(providers$SwissFederalGeoportal.NationalMapGrey, group = "swisstopo Topo",       options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addLayersControl(
     baseGroups = c("No background", "swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale"),
-    overlayGroups = c("VHI"),
+    overlayGroups = raster_groups,
     position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
-  ) |>
-  addRasterImage(
-    vhi_rast_wgs84,
-    colors = pal_vhi,
-    opacity = 1.0, # 0.75 # since VHI map is only forested areas we can easily use 1.0
-    group = "VHI",
-    attribution = paste(
-      "VHI layer: \n&copy; swisstopo, Contains modified Copernicus Sentinel data 2026"
+  ) 
+
+for (i in seq_along(raster_groups)){
+  vhi_map <- vhi_map |>
+    addRasterImage(
+      vhi_rast_wgs84[[i]],
+      colors = pal_vhi,
+      opacity = 1.0, # 0.75 # since VHI map is only forested areas we can easily use 1.0
+      group = raster_groups[i],
+      attribution = paste(
+        "VHI layer: \n&copy; swisstopo, Contains modified Copernicus Sentinel data 2026"
+      )
     )
-  ) |>
+}
+
+vhi_map <- vhi_map |>
+  hideGroup(raster_groups[-1]) |>
+  showGroup(raster_groups[1]) |>
   addLegend(
     position = "bottomright",
     colors = vhi_cols,
@@ -717,9 +715,12 @@ leaflet() |>
     ),
     title = "VHI"
   )
+vhi_map
 ```
 
 
+Error sources such as clouds can potentially lead to anomalous values for certain dates. 
+Note that the above map is automatically generated and has not necessarily been checked visually.
 
 ## Current drought status summary
 
