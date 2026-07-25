@@ -329,9 +329,8 @@ figure.quarto-float div.leaflet-control {
   text-align: left !important;
 }
 ```
-```{R plot ERA5-Land}
+```{r, fig.cap= paste0("Potential cumulative water deficit across central Europe on ", date_to_plot, " from ERA5-Land reanalysis data (using Priestley Taylor PET).")}
 #| label: fig-map-pcwd-era5
-#| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestley Taylor PET)."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -654,11 +653,12 @@ In 2026, tree water deficit increases earlier than in 2025.
 
 The [SwissEO Vegetation Health Index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) combines Sentinel-2-derived Normalised Difference Vegetation Index (NDVI) observations with with land surface temperature data to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
 
-The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
+The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation is experiencing noticeable stress. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
-```{r}
-#| label: map-vhi
-#| fig-cap: "Latest swissEO Vegetation Health Index around Bern."
+```{r, fig.cap = paste('Latest swissEO Vegetation Health Index around Bern (dating from', unique(vhi_stats$date), ').')}
+#| label: fig-map-vhi_latest
+#| fig-width: 8
+#| fig-height: 5
 
 # VHI auf gültigen Bereich begrenzen
 vhi_plot_data <- vhi_plot_data |>
@@ -724,7 +724,7 @@ Error sources such as clouds can potentially lead to anomalous values.
 Note that the above map is automatically generated and has not necessarily been checked visually.
 Below we show a snapshot from July 16th 2026, that appears to be cloud-free:
 
-```{r fig-cap=paste("swissEO Vegetation Health Index around Bern (dating from 2026-07-16).")}
+```{r fig.cap=paste('swissEO Vegetation Health Index around Bern (dating from 2026-07-16).')}
 #| label: fig-map-vhi_fixedDate_2026-07-16
 #| fig-width: 8
 #| fig-height: 5
