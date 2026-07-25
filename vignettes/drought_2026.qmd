@@ -743,12 +743,12 @@ Both indices indicate that the ecosystem is currently in a state of elevated dro
 
 
 
-## Appendix
+## Appendix: links for whole Switzerland
 
 Looking beyond the Bern area, below appendices provide further resources on national level for Switzerland.
 
 
-## Appendix A - Soil water across Switzerland (SwissSMEX and SwissSPOT)
+### Appendix A - Soil water across Switzerland (SwissSMEX and SwissSPOT)
 The SwissSMEX and SwissSPOT monitoring networks provide continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
 
 [Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
@@ -758,7 +758,7 @@ For the SwissSMEX site in Bern the soil moisture anomaly in the current year is 
 [Open SwissSPOT Monitoring Dashboard](https://www.wsl.ch/de/projekte/swissspot-swiss-forest-soil-water-potential-network/){.btn .btn-primary}
 
 
-## Appendix B - Tree water deficit across Switzerland (TreeNet)
+### Appendix B - Tree water deficit across Switzerland (TreeNet)
 
 TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
 
@@ -772,7 +772,7 @@ On the following website there is a more detailed break down of the current tree
 
 [TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/){.btn .btn-primary}
 
-## Appendix C - Vegetation health index across Switzerland (swisstopo)
+### Appendix C - Vegetation health index across Switzerland (swisstopo)
 
 The full [vegetation health index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) across Switzerland can be checked at swisstopo:
 [Open swisstopo VHI map viewer](https://map.geo.admin.ch/?layers=ch.swisstopo.swisseo_vhi_v100){.btn .btn-primary}
