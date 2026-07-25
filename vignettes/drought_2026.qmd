@@ -21,6 +21,7 @@ library(leaflet)
 library(terra)
 library(lubridate)
 library(base64enc)
+library(htmlwidgets)
 
 
 # A) (optionally) update underlying data set with freshly downloaded data
@@ -295,9 +296,15 @@ The Thornthwaite-based reconstruction allows to extend the PCWD record back to 1
 To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from the global [ERA5-Land-T reanalysis dataset](https://doi.org/10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
 
 Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date and the temporal evolution of the region.
-
+```{css, echo=FALSE}
+/*|  include: false */
+/*Below is needed to have the color squares in the colorbin legend nicely left-aligned.*/
+figure.quarto-float div.leaflet-control {
+  text-align: left !important;
+}
+```
 ```{R plot ERA5-Land}
-#| label: fig-pcwd-ERA5Land-map
+#| label: fig-pcwd-era5
 #| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestley Taylor PET)."
 #| fig-width: 8
 #| fig-height: 5
@@ -355,23 +362,17 @@ img_uri <- base64enc::dataURI(file = tmp_png, mime = "image/png")
 
 # generate map as leaflet
 leaflet() |>
-  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
-  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
-  addRasterImage(
-    raster_to_plot_ERA5LAND_PCWD,
-    colors = pal_ERA5LAND_PCWD,
-    opacity = 0.75,
-    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
-    attribution = paste(
-      "\n&copy; Copernicus Climate Change Service information (2019). Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 16-Jul-2026) Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
-    )
-  ) |>
+  addMapPane("basemap", zIndex = 1) |> # NOTE: pane is a fix to better control order
+  addProviderTiles(providers$SwissFederalGeoportal.NationalMapGrey, group = "swisstopo Topo",       options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addLayersControl(
-    position = "topleft",
-    baseGroups = c("World Topo", "World Imagery"),
+    baseGroups = c("swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale", "No background"),
     overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
+    position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
   ) |>
+  # add inset image:
   addControl(
     position = "topleft",
     html = paste0("<style>
@@ -380,6 +381,16 @@ leaflet() |>
                   sprintf(
                     "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
       220-16, img_uri)) # 220px - 2*8px padding
+  ) |>
+  # add main raster image:
+  addRasterImage(
+    raster_to_plot_ERA5LAND_PCWD,
+    colors = pal_ERA5LAND_PCWD,
+    opacity = 0.75,
+    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
+    attribution = paste(
+      "\n&copy; Copernicus Climate Change Service information (2019). Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 16-Jul-2026) Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
+    )
   ) |>
   addLegend(
     position = "topright",
@@ -646,19 +657,24 @@ pal_vhi <- colorBin(
 )
 
 leaflet() |>
-  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
-  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
-  addRasterImage(
-    vhi_rast_wgs84,
-    colors = pal_vhi,
-    opacity = 0.75,
-    group = "VHI"
-  ) |>
+  addMapPane("basemap", zIndex = 1) |> # NOTE: pane is a fix to better control order
+  addProviderTiles(providers$SwissFederalGeoportal.NationalMapGrey, group = "swisstopo Topo",       options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addLayersControl(
-    baseGroups = c("World Topo", "World Imagery"),
+    baseGroups = c("swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale", "No background"),
     overlayGroups = c("VHI"),
     position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  addRasterImage(
+    vhi_rast_wgs84,
+    colors = pal_vhi,
+    opacity = 1.0, # 0.75 # since VHI map is only forested areas we can easily use 1.0
+    group = "VHI",
+    attribution = paste(
+      "VHI layer: \n&copy; swisstopo, Contains modified Copernicus Sentinel data 2026"
+    )
   ) |>
   addLegend(
     position = "bottomright",
@@ -673,10 +689,6 @@ leaflet() |>
       "60–100: Excellent"
     ),
     title = "VHI"
-  ) |>
-  addControl(
-    html = "© swisstopo, Contains modified Copernicus Sentinel data 2026",
-    position = "bottomleft"
   )
 ```
 
