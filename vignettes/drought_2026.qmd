@@ -720,18 +720,6 @@ leaflet() |>
 ```
 
 
-Error sources such as clouds can potentially lead to anomalous values. 
-Note that the above map is automatically generated and has not necessarily been checked visually.
-Below we show a snapshot from July 16th 2026, that appears to be cloud-free:
-
-```{r fig.cap=paste('swissEO Vegetation Health Index around Bern (dating from 2026-07-16).')}
-#| label: fig-map-vhi_fixedDate_2026-07-16
-#| fig-width: 8
-#| fig-height: 5
-
-# TODO
-```
-
 
 ## Current drought status summary
 
@@ -766,7 +754,13 @@ Currently, the highest proportions of trees classified as experiencing high or v
 
 Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
 
-![TreeNet TWD Overview](https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg)
+
+```{r}
+#| label: fig-app-treenet
+#| fig-width: 5
+#| fig-cap: TreeNet TWD Overview
+knitr::include_graphics("https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg")
+```
 
 On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
 
