@@ -27,7 +27,7 @@ library(htmlwidgets)
 # A) (optionally) update underlying data set with freshly downloaded data
 dir.create(here("data-dynamic"), showWarnings = FALSE)
 # MeteoSwiss data:
-if (FALSE) { # NOTE: activate this for automatic update
+if (TRUE) { # NOTE: activate this for automatic update
   source(here("analysis", "00_download_meteoswiss_data.R")) 
   # creates: data-raw/meteoswiss_station_bern/Bern_cur_daily.csv and Bern_hist_daily.csv
   
@@ -41,7 +41,7 @@ if (FALSE) { # NOTE: activate this for automatic update
   }
 }
 # GECO-sites:
-if (FALSE) { # NOTE: activate this for automatic update
+if (FALSE) { # NOTE: activate this for automatic update (TODO: automatize all manual steps)
   source(here("analysis", "03_GECOsites.R")) # TODO: this does not yet exist
   # creates: data-dynamic/daily_SWP_drakau.csv and daily_TWD_drakau.csv
 } else {
@@ -52,7 +52,7 @@ if (FALSE) { # NOTE: activate this for automatic update
   }
 }
 # SwissEOVHI:
-if (FALSE) { # NOTE: activate this for automatic update
+if (TRUE) { # NOTE: activate this for automatic update
   source(here("analysis", "02_swissEOVHI.R"))
   # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
 } else {
@@ -63,9 +63,9 @@ if (FALSE) { # NOTE: activate this for automatic update
   }
 }
 # ERA5-Land:
-if (FALSE) { # NOTE: activate this for automatic update
+if (FALSE) { # NOTE: activate this for automatic update (TODO: automatize all manual steps)
   source(here("analysis", "04_calc_pcwd_era5land.R"))
-  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+  # creates: ERA5LandCWD/data_derived_03_....nc
 } else {
   for (filename in c("ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc",
                      "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc",
@@ -304,7 +304,7 @@ figure.quarto-float div.leaflet-control {
 }
 ```
 ```{R plot ERA5-Land}
-#| label: fig-pcwd-era5
+#| label: fig-map-pcwd-era5
 #| fig-cap: "Potential cumulative water deficit across central Europe for the indicated date derived from ERA5-Land reanalysis data (using Priestley Taylor PET)."
 #| fig-width: 8
 #| fig-height: 5
