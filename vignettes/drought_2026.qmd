@@ -770,6 +770,9 @@ Regional differences are also apparent. The southern Alps and the Pre-Alps curre
 
 On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
 
-[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
+[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/){.btn .btn-primary}
 
+## Appendix C - Vegetation health index across Switzerland (swisstopo)
 
+The full [vegetation health index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) across Switzerland can be checked at swisstopo:
+[Open swisstopo VHI map viewer](https://map.geo.admin.ch/?layers=ch.swisstopo.swisseo_vhi_v100){.btn .btn-primary}
