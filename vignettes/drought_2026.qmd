@@ -662,7 +662,7 @@ leaflet() |>
   addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addLayersControl(
-    baseGroups = c("swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale", "No background"),
+    baseGroups = c("No background", "swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale"),
     overlayGroups = c("VHI"),
     position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
@@ -679,6 +679,7 @@ leaflet() |>
   addLegend(
     position = "bottomright",
     colors = vhi_cols,
+    opacity = 1,
     labels = c(
       "0–9: Extremely stressed",
       "10–19: Very stressed",
@@ -690,6 +691,19 @@ leaflet() |>
     ),
     title = "VHI"
   )
+```
+
+
+Error sources such as clouds can potentially lead to anomalous values. 
+Note that the above map is automatically generated and has not necessarily been checked visually.
+Below we show a snapshot from July 16th 2026, that appears to be cloud-free:
+
+```{r fig-cap=paste("swissEO Vegetation Health Index around Bern (dating from 2026-07-16).")}
+#| label: fig-map-vhi_fixedDate_2026-07-16
+#| fig-width: 8
+#| fig-height: 5
+
+# TODO
 ```
 
 
