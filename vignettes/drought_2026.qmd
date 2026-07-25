@@ -176,6 +176,15 @@ p_pt <- ggplot() +
     aes(x = doy, y = PCWD_PT, colour = as.factor(year), group = year),
     linewidth = 0.5
   ) +
+  geom_text(data = meteo_pcwd_PT |> filter(year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_PT == max(PCWD_PT)) |> ungroup() |>
+      # keep only years among the top 5
+      arrange(desc(PCWD_PT)) |> slice(1:5),
+    aes(x = doy, y = PCWD_PT, colour = as.factor(year), label = year),
+    vjust = -0.1, show.legend = FALSE
+  ) +
   scale_colour_manual(
     values = highlight_colours,
     name = "Year"
@@ -267,6 +276,23 @@ p_thorn <- ggplot() +
     aes(x = doy, y = PCWD_THORN, colour = as.factor(year), group = year),
     linewidth = 0.5
   ) +
+  # add labels to maximum (first highlight years, then for 5 largest non-highlight years)
+  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_THORN == max(PCWD_THORN)),
+    aes(x = doy, y = PCWD_THORN, colour = as.factor(year), label = year),
+    vjust = -0.1, show.legend = FALSE
+  ) +
+  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(!year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_THORN == max(PCWD_THORN)) |>
+      # keep only years among the top 5 maxima
+       ungroup() |> arrange(desc(PCWD_THORN)) |> slice(1:5),
+    aes(x = doy, y = PCWD_THORN, label = year),
+    vjust = -0.1, show.legend = FALSE, color = "grey75"
+  ) + 
   scale_colour_manual(
     values = highlight_colours,
     name = "Year"
