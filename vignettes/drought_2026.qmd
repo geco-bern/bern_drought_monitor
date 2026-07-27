@@ -137,7 +137,7 @@ source(here::here("R", "plot_helper.R"))
 
 This drought monitor combines several complementary variables to assess the current drought situation with a focus on the region of Bern, Switzerland: 
 
-  - Potential cumulative water deficit (derived from local MeteoSchweiz station and from ERA5-Land climate reanalysis).
+  - Potential cumulative water deficit (derived from local MeteoSchweiz station data and from ERA5-Land climate reanalysis).
   - Soil water potential (local measurements by [GECO](https://geco-group.org/), University of Bern)
   - Tree water deficit (local measurements by [GECO](https://geco-group.org/), University of Bern)
   - Vegetation Health Index, [SwissEO VHI](https://www.swisstopo.admin.ch/de/satellitenbilder-swisseo-vhi) (satellite-derived product by swisstopo)
@@ -593,7 +593,7 @@ p1 <-
 p1
 ```
 
-**Findings**
+**Finding**
 
 The soil has dried out much earlier in 2026 than in 2025. The current levels of the soil water potential (low values indicate dry conditions) are of similar magnitude as the driest values in 2025. However, in 2025, low values were attained much later in the season.
 
@@ -753,7 +753,7 @@ p_twd_blog <- ggplot(
 p_twd_blog
 ```
 
-**Findings**
+**Finding**
 
 Tree water deficits are as high or higher than ever recorded in 2025. However, in contrast to 2026, deficits have started rising much earlier. This indicates that water stress is has been affecting trees throughout almost the full growing season this year. In contrast, water stress effects at the high and mid positions were limited to August in 2025. This likely has important negative consequences for the carbon balance and growth of trees in 2026.
 
@@ -824,7 +824,7 @@ vhi_map <- vhi_map |>
 vhi_map
 ```
 
-**Findings**
+**Finding**
 
 Extremely stressed vegetation dominates throughout the region. Variability in stress levels should be interpreted with caution. Error sources such as clouds can potentially lead to anomalous values for certain dates.
 
