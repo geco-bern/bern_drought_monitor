@@ -88,7 +88,7 @@ meteo_pcwd <- read_csv(here("data-dynamic", "Bern_pcwd_daily.csv"))
 df_SWP <- read_csv(here("data-dynamic","daily_SWP_drakau.csv"))
 df_TWD <- read_csv(here("data-dynamic","daily_TWD_drakau.csv"))
 
-vhi_rast_wgs84 <- terra::rast(here("data-dynamic", "swisseo_vhi_bern_plot_data_3dates.tif"))
+vhi_rast_wgs84 <- terra::rast(here("data-dynamic", "swisseo_vhi_bern_plot_data_5dates.tif"))
 vhi_stats      <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
 
 
@@ -537,12 +537,15 @@ As part of the collaboration project of the WSL and the University of Bern tree 
 #| fig-cap: "Seasonal dynamics of tree water deficit at different landscape positions (above Aare river) in 2025 and 2026."
 #| fig-width: 8
 #| fig-height: 5
+
 df_TWD_blog <- df_TWD |>
   mutate(
+    # Year used for colouring
     year = factor(
       lubridate::year(date),
       levels = c(2025, 2026)
     ),
+
     # Place both years on the same seasonal x-axis
     plot_date = as.Date(
       sprintf(
@@ -551,14 +554,18 @@ df_TWD_blog <- df_TWD |>
         lubridate::day(date)
       )
     ),
-    # Extract site identifier and define panel order
+
+    # Extract site identifier from tree name
     site = stringr::str_sub(tree_name, -2, -1),
 
+    # Define landscape-position labels and order
     plot = factor(
       site,
-      levels = c("P3", "P2", "P1", "G1"), labels = c("High","Mid","Low", "G1")
+      levels = c("P3", "P2", "P1", "G1"),
+      labels = c("High", "Mid", "Low", "G1")
     ),
-    # Short common names for clearer facet labels
+
+    # Short common names for facet labels
     species = factor(
       tree_genus_species,
       levels = c(
@@ -573,7 +580,7 @@ df_TWD_blog <- df_TWD |>
   ) |>
   filter(
     year %in% c("2025", "2026"),
-    plot %in% c("High","Mid","Low"),
+    plot %in% c("High", "Mid", "Low"),
     tree_genus_species %in% c(
       "Abies alba",
       "Fagus sylvatica"
@@ -581,67 +588,96 @@ df_TWD_blog <- df_TWD |>
     lubridate::month(date) >= 4,
     lubridate::month(date) <= 10
   ) |>
+
+  # Keep every individual tree separate
   group_by(
     plot_date,
     year,
-    site,
+    tree_name,
     plot,
     species
   ) |>
   summarise(
-    TWD_mean = mean(TWD_mean, na.rm = TRUE),
+    TWD = mean(TWD_mean, na.rm = TRUE),
     .groups = "drop"
   ) |>
-  filter(is.finite(TWD_mean))
+  filter(
+    is.finite(TWD)
+  )
+
 
 p_twd_blog <- ggplot(
   df_TWD_blog,
   aes(
     x = plot_date,
-    y = TWD_mean,
+    y = TWD,
     colour = year,
-    group = year
+
+    # Separate line for every tree and year
+    group = interaction(year, tree_name)
   )
 ) +
   geom_line(
-    linewidth = 0.8,
-    alpha = 0.95,
+    linewidth = 0.55,
+    alpha = 0.55,
     na.rm = TRUE
   ) +
+
+  # Landscape position in rows, species in columns
   facet_grid(
-    cols = vars(plot),
-    rows = vars(species),
+    rows = vars(plot),
+    cols = vars(species),
     scales = "fixed"
   ) +
+
   scale_colour_manual(
-    values = c(highlight_colours, c("2025" = "darkgrey")),
+    values = c(
+      "2025" = "darkgrey",
+      "2026" = highlight_colours[["2026"]]
+    ),
     drop = FALSE
   ) +
+
   scale_x_date(
-    limits = as.Date(c("2000-04-01", "2000-10-31")),
+    limits = as.Date(
+      c("2000-04-01", "2000-10-31")
+    ),
     date_breaks = "1 month",
     date_labels = "%b",
-    expand = expansion(mult = c(0.01, 0.01))
-  ) +
-  labs(
-    title = "Tree water deficit across species",
-    x = NULL,
-    y = "Mean tree water deficit (\u00b5m)",
-    colour = NULL,
-    caption = paste(
-      "Silver fir corresponds to Abies alba; European beech to Fagus sylvatica.\nHigher values indicate greater depletion of water stored in the elastic",
-      "tissues of the stem."
+    expand = expansion(
+      mult = c(0.01, 0.01)
     )
   ) +
-  guides(
-    colour = guide_legend(order = 1),
-    linetype = guide_legend(order = 1)
+
+  labs(
+    title = "Tree water deficit across individual trees",
+    x = NULL,
+    y = "Tree water deficit (\u00b5m)",
+    colour = NULL,
+    caption = paste(
+      "Each line represents an individual tree.",
+      "Silver fir corresponds to Abies alba; European beech to Fagus sylvatica.\n",
+      "Higher values indicate greater depletion of water stored in",
+      "the elastic tissues of the stem."
+    )
   ) +
+
+  guides(
+    colour = guide_legend(
+      order = 1
+    )
+  ) +
+
   general_plot_theme +
+
   theme(
-    legend.position = "inside", legend.position.inside = c(0.01,1.0),  legend.justification = c(0,1),
-    legend.direction = "vertical", legend.box = "vertical"
+    legend.position = "inside",
+    legend.position.inside = c(0.01, 1.0),
+    legend.justification = c(0, 1),
+    legend.direction = "vertical",
+    legend.box = "vertical"
   )
+
 
 p_twd_blog
 ```
@@ -771,3 +807,7 @@ On the following website there is a more detailed break down of the current tree
 
 The full [vegetation health index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) across Switzerland can be checked at swisstopo:
 [Open swisstopo VHI map viewer](https://map.geo.admin.ch/?layers=ch.swisstopo.swisseo_vhi_v100){.btn .btn-primary}
+
+### Appendix D - National drought platform
+
+A national overview of the current drought situation is available here: [National drought platform](https://www.trockenheit.admin.ch/en)
