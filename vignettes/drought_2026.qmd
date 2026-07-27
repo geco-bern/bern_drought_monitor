@@ -24,6 +24,7 @@ current_year <- 2026
 
 # A) (optionally) update underlying data set with freshly downloaded data
 dir.create(here("data-dynamic"), showWarnings = FALSE)
+
 # MeteoSwiss data:
 if (FALSE) { # NOTE: activate this for automatic update
   source(here("analysis", "00_download_meteoswiss_data.R")) 
@@ -38,6 +39,7 @@ if (FALSE) { # NOTE: activate this for automatic update
               overwrite = TRUE)
   }
 }
+
 # GECO-sites:
 if (FALSE) { # NOTE: activate this for automatic update
   source(here("analysis", "03_GECOsites.R")) # TODO: this does not yet exist
@@ -49,6 +51,7 @@ if (FALSE) { # NOTE: activate this for automatic update
               overwrite = TRUE)
   }
 }
+
 # SwissEOVHI:
 if (FALSE) { # NOTE: activate this for automatic update
   source(here("analysis", "02_swissEOVHI.R"))
@@ -60,9 +63,6 @@ if (FALSE) { # NOTE: activate this for automatic update
               overwrite = TRUE)
   }
 }
-
-
-
 
 # B) Load (updated) data
 meteo_pcwd <- read_csv(here("data-dynamic", "Bern_pcwd_daily.csv"))
@@ -165,6 +165,7 @@ p_pt <- ggplot() +
     )
   ) +
   theme_bw()
+
 p_pt
 
 # ggsave(
@@ -176,71 +177,14 @@ p_pt
 
 The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
 
-<!-- 
+For a larger context, PCWD was calculated with the Thornthwaite (temperature-based) method to calculate the PET and PCWD over the entire available record from MeteoSwiss the station.
+
 ```{r}
-p_fao <- ggplot() +
-  geom_line(
-    data = meteo_pcwd |> filter(!year %in% highlight_years),
-    aes(x = doy, y = PCWD_FAO, group = year),
-    colour = "grey75",
-    linewidth = 0.4,
-    alpha = 0.5
-  ) +
-  # geom_line(
-  #   data = pcwd_mean,
-  #   aes(x = doy, y = PCWD_FAO_mean),
-  #   colour = "black",
-  #   linewidth = 1
-  # ) +
-  geom_line(
-    data = pcwd_highlight,
-    aes(x = doy, y = PCWD_FAO, colour = year, group = year),
-    linewidth = 0.5
-  ) +
-  scale_colour_manual(
-    values = highlight_colours,
-    breaks = as.character(highlight_years),
-    name = "Year"
-  ) +
-  labs(
-    x = "Day of year",
-    y = "PCWD (mm)",
-    title = "Potential cumulative water deficit",
-    subtitle = paste0(
-      "Bern-Zollikofen, FAO56 PET (",
-      pcwd_year_range[1],
-      "–",
-      pcwd_year_range[2],
-      ")"
-    )
-  ) +
-  theme_bw()
 
-p_fao
-``` 
--->
-
-The sensitivity analysis based on FAO56 PET shows a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
-
-For a larger context PCWD was calculated with the Thornthwaite method to calculate the PET and PCWD over the entire record.
-
-```{R}
 #| label: fig-pcwd-thorn
 #| fig-cap: "Potential cumulative water deficit in Bern/Zollikofen based on Thornthwaite PET using the full available temperature record."
 #| fig-width: 8
 #| fig-height: 5
-
-# Mean seasonal course across all completed years
-pcwd_thorn_mean <- meteo_pcwd |>
-  filter(
-    year < current_year,
-    !is.na(PCWD_THORN)
-  ) |>
-  group_by(doy) |>
-  summarise(
-    PCWD_THORN_mean = mean(PCWD_THORN, na.rm = TRUE),
-    .groups = "drop"
-  )
 
 # Current year only
 pcwd_thorn_current <- meteo_pcwd |>
@@ -251,7 +195,7 @@ pcwd_thorn_current <- meteo_pcwd |>
   )
 
 # Years to highlight
-highlight_years <- c(current_year, 2022, 2018, 2023)
+highlight_years <- c(1947, 1976, 2003, 2018, 2026)
 
 # Determine the actual Thornthwaite year range
 pcwd_thorn_year_range <- meteo_pcwd |>
@@ -265,7 +209,7 @@ pcwd_thorn_year_range <- meteo_pcwd |>
 pcwd_thorn_highlight <- bind_rows(
   meteo_pcwd |>
     filter(
-      year %in% c(2022, 2018, 2023),
+      year %in% c(1947, 1976, 2003, 2018),
       !is.na(PCWD_THORN)
     ),
   pcwd_thorn_current
@@ -278,12 +222,7 @@ pcwd_thorn_highlight <- bind_rows(
   )
 
 highlight_colours <- setNames(
-  c(
-    "#D73027",
-    "#4575B4",
-    "#E69F00",
-    "#009E73"
-  ),
+  c("#D73027", "#4575B4", "#E69F00", "#009E73", "#CC79A7"),
   as.character(highlight_years)
 )
 
@@ -303,18 +242,6 @@ p_thorn <- ggplot() +
     linewidth = 0.4,
     alpha = 0.5
   ) +
-
-  # Optional long-term mean
-  # geom_line(
-  #   data = pcwd_thorn_mean,
-  #   aes(
-  #     x = doy,
-  #     y = PCWD_THORN_mean
-  #   ),
-  #   colour = "black",
-  #   linewidth = 1
-  # ) +
-
   geom_line(
     data = pcwd_thorn_highlight,
     aes(
@@ -348,11 +275,17 @@ p_thorn <- ggplot() +
   theme_bw()
 
 p_thorn
+
+ggsave(
+  here("fig/pcwd_pt_thorntwaite.pdf"),
+  width = 8,
+  height = 5
+)
 ```
 
 The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
 
-## 2. Soil moisture
+## Soil moisture
 
 The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
 
@@ -360,11 +293,12 @@ The SwissSMEX monitoring network provides continuous observations of soil moistu
 
 For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
 
-### Soil water potential Bremgartenwald
+### Soil water potential in Bremgartenwald, Bern
 
 At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil. 
 
-```{R}
+```{r}
+
 df_SWP_plot <- df_SWP |>
   mutate(
     year = factor(
