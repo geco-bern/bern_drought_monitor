@@ -2,8 +2,8 @@
 # from TreeNet data portal
 # retrieve daily SWP and TWD
 
-# For tree water deficit, L2 data quality was chosen 
-# while for soil water potential, L0 data quality was chosen 
+# For tree water deficit, L2 data quality was chosen
+# while for soil water potential, L0 data quality was chosen
 
 # Below code performs a quality check removing TWD outliers above 500um
 # and removign SWP outliers below 6000 kPa
@@ -158,5 +158,5 @@ df_daily_TWD_clean <- raw_TWD |>
 
 write_csv(
   df_daily_TWD_clean,
-  here("data-dynamic", "daily_TWD_drakau.csv"),
+  here("data", "daily_TWD_drakau.csv"),
 )

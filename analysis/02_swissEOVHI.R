@@ -267,7 +267,7 @@ raster_stack_wgs84 <- terra::project(raster_stack, "EPSG:4326", method = "near")
 # ---------------------------
 
 dir.create(
-  here("data-dynamic"),
+  here("data"),
   showWarnings = FALSE,
   recursive = TRUE
 )
@@ -276,7 +276,7 @@ dir.create(
 writeRaster(
   raster_stack_wgs84,
   here(
-    "data-dynamic",
+    "data",
     "swisseo_vhi_bern_plot_data_5dates.tif"
   ),
   overwrite = TRUE
@@ -300,7 +300,7 @@ stats <- plot_df |>
 write.csv(
   stats,
   here(
-    "data-dynamic",
+    "data",
     "swisseo_vhi_bern_stats.csv"
   ),
   row.names = FALSE
