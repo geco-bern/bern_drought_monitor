@@ -9,6 +9,34 @@
     ]
   },
   "Packages": {
+    "CFtime": {
+      "Package": "CFtime",
+      "Version": "1.7.3",
+      "Source": "Repository",
+      "Title": "Using CF-Compliant Calendars with Climate Projection Data",
+      "Authors@R": "person(\"Patrick\", \"Van Laake\", , \"patrick@vanlaake.net\", role = c(\"aut\", \"cre\", \"cph\"))",
+      "Description": "Support for all calendars as specified in the Climate and Forecast  (CF) Metadata Conventions for climate and forecasting data. The CF Metadata  Conventions is widely used for distributing files with climate observations  or projections, including the Coupled Model Intercomparison Project (CMIP)  data used by climate change scientists and the Intergovernmental Panel on Climate Change (IPCC). This package specifically allows the user to work  with any of the CF-compliant calendars (many of which are not compliant with  POSIXt). The CF time coordinate is formally defined in the CF Metadata  Conventions document available at <https://cf-convention.github.io/Data/cf-conventions/cf-conventions-1.13/cf-conventions.html#time-coordinate>.",
+      "License": "MIT + file LICENSE",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.3",
+      "Imports": [
+        "R6"
+      ],
+      "Suggests": [
+        "rmarkdown",
+        "testthat (>= 3.0.0)",
+        "stringr"
+      ],
+      "URL": "https://r-cf.github.io/CFtime/, https://github.com/R-CF/CFtime",
+      "BugReports": "https://github.com/R-CF/CFtime/issues",
+      "Config/testthat/edition": "3",
+      "Collate": "'api.R' 'CFCalendar.R' 'CFCalendar360.R' 'CFCalendar365.R' 'CFCalendar366.R' 'CFCalendarJulian.R' 'CFCalendarNone.R' 'CFCalendarProleptic.R' 'CFCalendarStandard.R' 'CFCalendarTAI.R' 'CFCalendarUTC.R' 'CFClimatology.R' 'CFtime-package.R' 'CFtime.R' 'helpers.R' 'zzz.R'",
+      "Config/Needs/website": "rmarkdown",
+      "NeedsCompilation": "no",
+      "Author": "Patrick Van Laake [aut, cre, cph]",
+      "Maintainer": "Patrick Van Laake <patrick@vanlaake.net>",
+      "Repository": "CRAN"
+    },
     "DBI": {
       "Package": "DBI",
       "Version": "1.2.3",
@@ -184,6 +212,35 @@
       "License": "Apache License 2.0",
       "NeedsCompilation": "no",
       "Repository": "CRAN"
+    },
+    "RNetCDF": {
+      "Package": "RNetCDF",
+      "Version": "2.11-1",
+      "Source": "Repository",
+      "Date": "2025-04-30",
+      "Title": "Interface to 'NetCDF' Datasets",
+      "Authors@R": "c(person(\"Pavel\", \"Michna\", role = \"aut\", email = \"rnetcdf-devel@bluewin.ch\"), person(\"Milton\", \"Woods\", role = c(\"aut\", \"cre\"), email = \"miltonjwoods@gmail.com\"))",
+      "Depends": [
+        "R (>= 3.0.0)"
+      ],
+      "SystemRequirements": "netcdf (>=4.1.3), udunits-2 (>=2.0.4)",
+      "Suggests": [
+        "bit64",
+        "tools"
+      ],
+      "Enhances": [
+        "pbdMPI",
+        "Rmpi"
+      ],
+      "Description": "An interface to the 'NetCDF' file formats designed by Unidata for efficient storage of array-oriented scientific data and descriptions. Most capabilities of 'NetCDF' version 4 are supported. Optional conversions of time units are enabled by 'UDUNITS' version 2, also from Unidata.",
+      "License": "GPL (>= 2) | file LICENSE",
+      "URL": "https://github.com/mjwoods/RNetCDF https://www.unidata.ucar.edu/software/netcdf/ https://www.unidata.ucar.edu/software/udunits/",
+      "BugReports": "https://github.com/mjwoods/RNetCDF/issues",
+      "NeedsCompilation": "yes",
+      "Author": "Pavel Michna [aut], Milton Woods [aut, cre]",
+      "Maintainer": "Milton Woods <miltonjwoods@gmail.com>",
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
     },
     "Rcpp": {
       "Package": "Rcpp",
@@ -2551,6 +2608,57 @@
       "Maintainer": "Yihui Xie <xie@yihui.name>",
       "Repository": "CRAN"
     },
+    "ncdf4": {
+      "Package": "ncdf4",
+      "Version": "1.24",
+      "Source": "Repository",
+      "Date": "2025-03-25",
+      "Title": "Interface to Unidata netCDF (Version 4 or Earlier) Format Data Files",
+      "Authors@R": "person(given=\"David\", family=\"Pierce\", email=\"dpierce@ucsd.edu\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"0000-0002-2453-9030\"))",
+      "Description": "Provides a high-level R interface to data files written using Unidata's netCDF library (version 4 or earlier), which are binary data files that are portable across platforms and include metadata information in addition to the data sets.  Using this package, netCDF files (either version 4 or \"classic\" version 3) can be opened and data sets read in easily.  It is also easy to create new netCDF dimensions, variables, and files, in either version 3 or 4 format, and manipulate existing netCDF files.  This package replaces the former ncdf package, which only worked with netcdf version 3 files.  For various reasons the names of the functions have had to be changed from the names in the ncdf package.  The old ncdf package is still available at the URL given below, if you need to have backward compatibility.  It should be possible to have both the ncdf and ncdf4 packages installed simultaneously without a problem.  However, the ncdf package does not provide an interface for netcdf version 4 files.",
+      "SystemRequirements": "netcdf library version 4.1 or later",
+      "License": "GPL (>= 3)",
+      "URL": "https://cirrus.ucsd.edu/~pierce/ncdf/",
+      "NeedsCompilation": "yes",
+      "Author": "David Pierce [aut, cre] (<https://orcid.org/0000-0002-2453-9030>)",
+      "Maintainer": "David Pierce <dpierce@ucsd.edu>",
+      "Repository": "RSPM",
+      "Encoding": "UTF-8"
+    },
+    "ncmeta": {
+      "Package": "ncmeta",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Title": "Straightforward 'NetCDF' Metadata",
+      "Authors@R": "c(person(\"Michael\", \"Sumner\", email = \"mdsumner@gmail.com\", role = c(\"aut\", \"cre\")),  person(\"Tomas\", \"Remenyi\", role = \"ctb\"),  person(\"Ben\", \"Raymond\", role = \"ctb\"),  person(\"David\", \"Blodgett\", role = \"ctb\"),  person(\"Milton\", \"Woods\", role = \"ctb\"))",
+      "Description": "Extract metadata from 'NetCDF' data sources, these can be files, file handles or servers. This package leverages and extends the lower level functions of the 'RNetCDF' package  providing a consistent set of functions that all return data frames. We introduce named concepts  of 'grid', 'axis' and 'source' which are all meaningful entities without formal definition in the  'NetCDF' library <https://www.unidata.ucar.edu/software/netcdf/>. 'RNetCDF' matches the library  itself with only the named concepts of 'variables', 'dimensions' and 'attributes'.",
+      "Depends": [
+        "R (>= 3.3.0)"
+      ],
+      "License": "GPL-3",
+      "Encoding": "UTF-8",
+      "RoxygenNote": "7.3.0",
+      "Imports": [
+        "dplyr",
+        "rlang",
+        "RNetCDF",
+        "tibble",
+        "stats",
+        "tidyr",
+        "CFtime"
+      ],
+      "Suggests": [
+        "testthat",
+        "covr"
+      ],
+      "URL": "https://github.com/hypertidy/ncmeta, https://hypertidy.github.io/ncmeta/",
+      "BugReports": "https://github.com/hypertidy/ncmeta/issues",
+      "ByteCompile": "TRUE",
+      "NeedsCompilation": "no",
+      "Author": "Michael Sumner [aut, cre], Tomas Remenyi [ctb], Ben Raymond [ctb], David Blodgett [ctb], Milton Woods [ctb]",
+      "Maintainer": "Michael Sumner <mdsumner@gmail.com>",
+      "Repository": "RSPM"
+    },
     "openssl": {
       "Package": "openssl",
       "Version": "2.3.5",
@@ -3958,6 +4066,50 @@
       "NeedsCompilation": "yes",
       "Author": "Kirill Müller [aut, cre] (ORCID: <https://orcid.org/0000-0002-1416-3412>), Hadley Wickham [aut], Romain Francois [ctb], Jennifer Bryan [ctb], Posit Software, PBC [cph, fnd] (ROR: <https://ror.org/03wc8by49>)",
       "Maintainer": "Kirill Müller <kirill@cynkra.com>",
+      "Repository": "CRAN"
+    },
+    "tidync": {
+      "Package": "tidync",
+      "Version": "0.4.0",
+      "Source": "Repository",
+      "Title": "A Tidy Approach to 'NetCDF' Data Exploration and Extraction",
+      "Authors@R": "c(person(\"Michael\", \"Sumner\", email = \"mdsumner@gmail.com\", role = c(\"aut\", \"cre\")),  person(\"Simon\", \"Wotherspoon\", role = \"ctb\"),  person(\"Tomas\", \"Remenyi\", role = \"ctb\"),  person(\"Ben\", \"Raymond\", role = \"ctb\"),  person(\"Jakub\", \"Nowosad\", role = \"ctb\"),  person(\"Tim\", \"Lucas\", role = \"ctb\"),  person(\"Hadley\", \"Wickham\", role = \"ctb\"),  person(\"Adrian\", \"Odenweller\", role = \"ctb\"),  person(\"Patrick\", \"Van Laake\", role = \"ctb\"),  person(\"Fabian\", \"Bernhard\", role = \"ctb\"))",
+      "Description": "Tidy tools for 'NetCDF' data sources. Explore the contents of a  'NetCDF' source (file or URL) presented as variables organized by grid with a  database-like interface. The hyper_filter() interactive function translates the  filter value or index expressions to array-slicing form. No data is read until  explicitly requested, as a data frame or list of arrays via hyper_tibble() or  hyper_array().",
+      "Depends": [
+        "R (>= 3.5.0)"
+      ],
+      "License": "GPL-3",
+      "Encoding": "UTF-8",
+      "ByteCompile": "true",
+      "Imports": [
+        "dplyr (>= 0.7.0)",
+        "forcats",
+        "magrittr",
+        "ncdf4",
+        "ncmeta (>= 0.2.0)",
+        "purrr",
+        "RNetCDF (>= 1.9-1)",
+        "rlang",
+        "tibble",
+        "tidyr",
+        "CFtime (>= 1.4.0)"
+      ],
+      "RoxygenNote": "7.3.2",
+      "Suggests": [
+        "ggplot2",
+        "knitr",
+        "rmarkdown",
+        "testthat",
+        "covr",
+        "cubelyr"
+      ],
+      "SystemRequirements": "netcdf udunits-2",
+      "URL": "https://docs.ropensci.org/tidync/",
+      "BugReports": "https://github.com/ropensci/tidync/issues",
+      "VignetteBuilder": "knitr",
+      "NeedsCompilation": "no",
+      "Author": "Michael Sumner [aut, cre], Simon Wotherspoon [ctb], Tomas Remenyi [ctb], Ben Raymond [ctb], Jakub Nowosad [ctb], Tim Lucas [ctb], Hadley Wickham [ctb], Adrian Odenweller [ctb], Patrick Van Laake [ctb], Fabian Bernhard [ctb]",
+      "Maintainer": "Michael Sumner <mdsumner@gmail.com>",
       "Repository": "CRAN"
     },
     "tidyr": {

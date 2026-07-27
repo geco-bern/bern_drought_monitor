@@ -1,5 +1,5 @@
 ---
-title: "Current drought situation in Bern, Switzerland"
+title: "Bern drought monitor"
 author: "Benjamin Stocker, Fabian Bernhard & Sascha Friedli"
 date: today
 format:
@@ -19,74 +19,136 @@ library(ggplot2)
 library(scales)
 library(leaflet)
 library(terra)
+library(lubridate)
+library(base64enc)
+library(htmlwidgets)
 
-current_year <- 2026
 
 # A) (optionally) update underlying data set with freshly downloaded data
 dir.create(here("data-dynamic"), showWarnings = FALSE)
 
 # MeteoSwiss data:
-if (FALSE) { # NOTE: activate this for automatic update
-  source(here("analysis", "00_download_meteoswiss_data.R")) 
+if (TRUE) {
+  # NOTE: activate this for automatic update
+  source(here("analysis", "00_download_meteoswiss_data.R"))
   # creates: data-raw/meteoswiss_station_bern/Bern_cur_daily.csv and Bern_hist_daily.csv
-  
-  source(here("analysis", "01_calc_pcwd.R"))                
+
+  source(here("analysis", "01_calc_pcwd.R"))
   # creates: data-dynamic/Bern_pcwd_daily.csv
 } else {
-  for (filename in c("Bern_pcwd_daily.csv")){
-    file.copy(from = here("data/",         filename), 
-              to   = here("data-dynamic/", filename), 
-              overwrite = TRUE)
+  for (filename in c("Bern_pcwd_daily.csv")) {
+    file.copy(
+      from = here("data/", filename),
+      to = here("data-dynamic/", filename),
+      overwrite = TRUE
+    )
   }
 }
 
 # GECO-sites:
-if (FALSE) { # NOTE: activate this for automatic update
+if (FALSE) {
+  # NOTE: activate this for automatic update (TODO: automatize all manual steps)
   source(here("analysis", "03_GECOsites.R")) # TODO: this does not yet exist
   # creates: data-dynamic/daily_SWP_drakau.csv and daily_TWD_drakau.csv
 } else {
-  for (filename in c("daily_SWP_drakau.csv", "daily_TWD_drakau.csv")){
-    file.copy(from = here("data/",         filename), 
-              to   = here("data-dynamic/", filename), 
-              overwrite = TRUE)
+  for (filename in c("daily_SWP_drakau.csv", "daily_TWD_drakau.csv")) {
+    file.copy(
+      from = here("data/", filename),
+      to = here("data-dynamic/", filename),
+      overwrite = TRUE
+    )
   }
 }
 
 # SwissEOVHI:
-if (FALSE) { # NOTE: activate this for automatic update
+if (TRUE) {
+  # NOTE: activate this for automatic update
   source(here("analysis", "02_swissEOVHI.R"))
-  # creates: data-dynamic/swisseo_vhi_bern_plot_data.csv and swisseo_vhi_bern_stats.csv
+  # creates: data-dynamic/swisseo_vhi_bern_plot_data_3dates.tif and swisseo_vhi_bern_stats.csv
 } else {
-  for (filename in c("swisseo_vhi_bern_plot_data.csv", "swisseo_vhi_bern_stats.csv")){
-    file.copy(from = here("data/",         filename), 
-              to   = here("data-dynamic/", filename), 
-              overwrite = TRUE)
+  for (filename in c(
+    "swisseo_vhi_bern_stats.csv",
+    "swisseo_vhi_bern_plot_data_3dates.tif"
+  )) {
+    file.copy(
+      from = here("data/", filename),
+      to = here("data-dynamic/", filename),
+      overwrite = TRUE
+    )
+  }
+}
+
+# ERA5-Land:
+if (FALSE) {
+  # NOTE: activate this for automatic update (TODO: automatize all manual steps)
+  source(here("analysis", "04_calc_pcwd_era5land.R"))
+  # creates: ERA5LandCWD/data_derived_03_....nc
+} else {
+  for (filename in c(
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionBern.nc",
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc",
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionEUROPE.nc",
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionBern.nc",
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc",
+    "ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionEUROPE.nc"
+  )) {
+    file.copy(
+      from = here("data/", filename),
+      to = here("data-dynamic/", filename),
+      overwrite = TRUE
+    )
   }
 }
 
 # B) Load (updated) data
 meteo_pcwd <- read_csv(here("data-dynamic", "Bern_pcwd_daily.csv"))
 
-df_SWP <- read_csv(here("data-dynamic","daily_SWP_drakau.csv"))
-df_TWD <- read_csv(here("data-dynamic","daily_TWD_drakau.csv"))
+df_SWP <- read_csv(here("data-dynamic", "daily_SWP_drakau.csv"))
+df_TWD <- read_csv(here("data-dynamic", "daily_TWD_drakau.csv"))
 
-vhi_plot_data <- read_csv(here("data-dynamic", "swisseo_vhi_bern_plot_data.csv"))
+vhi_rast_wgs84 <- terra::rast(here(
+  "data-dynamic",
+  "swisseo_vhi_bern_plot_data_3dates.tif"
+))
 vhi_stats <- read_csv(here("data-dynamic", "swisseo_vhi_bern_stats.csv"))
+
+# C) Define palette:
+# Klassenfarben gemäss swissEO
+vhi_cols <- c(
+  "#b56a29", # Extremely stressed
+  "#ce8540", # Very stressed
+  "#f5cd85", # Stressed
+  "#fff5ba", # Slightly stressed
+  "#cbffca", # Normal
+  "#52bd9f", # Good
+  "#0470b0" # Excellent
+)
+
+vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
+
+# and load other plot helpers:
+source(here::here("R", "plot_helper.R"))
 ```
 
 ## Overview
 
 Drought conditions have intensified across parts of Switzerland during spring and early summer 2026. A combination of below-average precipitation and increasing atmospheric evaporative demand has lead to signals of increasing drought stress since April.
 
-This update combines several complementary indicators to assess the current drought situation: the potential cumulative water deficit derived from meteorological observations and satellite-based vegetation health metrics from swisstopo. Together, this provides insights into how the ongoing dry conditions affect the atmosphere, vegetation, and forest ecosystems.
+This drought monitor combines several complementary indicators to assess the current drought situation: 
+  - the potential cumulative water deficit (derived from local meteorological observations or ERA5-Land),
+  - local soil water potential observations
+  - tree water deficit observations
+  - and satellite-based vegetation health metrics from swisstopo. 
 
-The figures below summarize the current state of drought stress around Bern and across Switzerland as of today (see date in header).
+The combinations of these indicators provides insights into the severity of ongoing dry conditions with respect to the atmosphere, the soil, and the vegetation.
+
+The figures below allow to monitor the current drought stress around Bern and across Switzerland as of today (see date in header).
 
 ## Meteorological drought
 
-To assess current meteorological drought conditions, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
+To put current meteorological drought conditions in perspective, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
 
-PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The primary estimate uses Priestley–Taylor PET based on estimated net radiation. As a sensitivity analysis, we additionally calculate PCWD using FAO56 reference evapotranspiration based on Penman-Monteith PET (not shown, but yielding consistent results).
+PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The estimate of PCWD uses Priestley–Taylor PET based on estimated net radiation. (The sensitivity of the results to the choice of PET calculation was assessed by additionally estimating PCWD with the Penman-Monteith (FAO56) and Thornthwaite methods. Results were consistent.)
 
 ### Potential cumulative water deficit (PCWD)
 
@@ -97,57 +159,98 @@ Potential cumulative water deficit (PCWD) describes the accumulated atmospheric 
 
 :::
 
+#### Historic context of current PCWD
+
 ```{r}
 #| label: fig-pcwd
-#| fig-cap: "Potential cumulative water deficit Bern/Zollikofen. Priestley–Taylor PET is the primary estimate; FAO56 is shown as sensitivity analysis."
-#| fig-width: 8
+#| warning: false
+#| fig-cap: Potential cumulative water deficit Bern/Zollikofen.
 #| fig-height: 5
+#| fig-width: 8
 
-pcwd_mean <- meteo_pcwd |>
-  filter(year < current_year) |>
-  group_by(doy) |>
-  summarise(
-    PCWD_PT_mean = mean(PCWD_PT, na.rm = TRUE),
-    PCWD_FAO_mean = mean(PCWD_FAO, na.rm = TRUE),
-    .groups = "drop"
-  )
+meteo_pcwd_PT <- meteo_pcwd |> 
+  slice_head(n = -1) |> # drop last line which appears to be set to pcwd_mm = 0
+  filter(!is.na(PCWD_PT)) # subset years from 2010 on
 
-pcwd_current <- meteo_pcwd |>
-  filter(
-    year == current_year,
-    date < max(date, na.rm = TRUE)
-    )
-
-highlight_years <- c(current_year, 2022, 2018, 2023)
-pcwd_year_range <- range(meteo_pcwd$year, na.rm = TRUE)
-pcwd_highlight <- bind_rows(
-  meteo_pcwd |> filter(year %in% c(2022, 2018, 2023)),
-  pcwd_current
-) |>
-  mutate(year = factor(year, levels = highlight_years))
-
-highlight_colours <- setNames(
-  c("#D73027", "#4575B4", "#E69F00", "#009E73"),
-  as.character(highlight_years)
+highlight_colours <- c(
+  "2026" = "#D73027", 
+  "2022" = "#4575B4", 
+  "2018" = "#E69F00", 
+  "2023" = "#009E73",
+  "1947" = "#CC79A7", 
+  "1976" = "#56B4E9", 
+  "2003" = "#F0E442"
 )
+
+highlight_years <- as.integer(names(highlight_colours))
 
 p_pt <- ggplot() +
   geom_line(
-    data = meteo_pcwd |> filter(!year %in% highlight_years),
+    data = meteo_pcwd_PT |> filter(!year %in% highlight_years),
     aes(x = doy, y = PCWD_PT, group = year),
     colour = "grey75",
     linewidth = 0.4,
     alpha = 0.5
   ) +
-  # geom_line(
-  #   data = pcwd_mean,
-  #   aes(x = doy, y = PCWD_PT_mean),
-  #   colour = "black",
-  #   linewidth = 1
-  # ) +
   geom_line(
-    data = pcwd_highlight,
-    aes(x = doy, y = PCWD_PT, colour = year, group = year),
+    data = meteo_pcwd_PT |>  filter(year %in% highlight_years),
+    aes(x = doy, y = PCWD_PT, colour = as.factor(year), group = year),
+    linewidth = 0.5
+  ) +
+  geom_text(data = meteo_pcwd_PT |> filter(year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_PT == max(PCWD_PT)) |> ungroup() |>
+      # keep only years among the top 5
+      arrange(desc(PCWD_PT)) |> slice(1:5),
+    aes(x = doy, y = PCWD_PT, colour = as.factor(year), label = year),
+    vjust = -0.1, show.legend = FALSE
+  ) +
+  scale_colour_manual(
+    values = highlight_colours,
+    name = "Year"
+  ) +
+  labs(
+    x = "Day of year",
+    y = "PCWD (mm)",
+    title = "Potential cumulative water deficit",
+    subtitle = paste0(
+      "Bern-Zollikofen, Priestley-Taylor PET (",
+      min(meteo_pcwd_PT$year, na.rm = TRUE), "–", max(meteo_pcwd_PT$year, na.rm = TRUE), ")"
+    )
+  ) +
+  general_plot_theme +
+  theme(
+    legend.position = "inside", legend.position.inside = c(0.01,1),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
+  )
+
+p_pt
+
+# # uncomment for saving as separate plot file
+# ggsave(here::here("fig", "pcwd_pt.pdf"), width = 8, height = 5)
+```
+
+The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
+
+For a larger context, PCWD was calculated with the Thornthwaite (temperature-based) method to calculate the PET and PCWD over the entire available record from MeteoSwiss the station.
+
+<!-- 
+
+Penman-Monteith-based PET calculation not included
+
+```{r}
+p_fao <- ggplot() +
+  geom_line(
+    data = meteo_pcwd |> filter(!year %in% highlight_years),
+    aes(x = doy, y = PCWD_FAO, group = year),
+    colour = "grey75",
+    linewidth = 0.4,
+    alpha = 0.5
+  ) +
+  geom_line(
+    data = meteo_pcwd |> filter(year %in% highlight_years),
+    aes(x = doy, y = PCWD_FAO, colour = as.factor(year), group = year),
     linewidth = 0.5
   ) +
   scale_colour_manual(
@@ -160,144 +263,210 @@ p_pt <- ggplot() +
     y = "PCWD (mm)",
     title = "Potential cumulative water deficit",
     subtitle = paste0(
-      "Bern-Zollikofen, Priestley-Taylor PET (",
-      pcwd_year_range[1], "–", pcwd_year_range[2], ")"
+      "Bern-Zollikofen, FAO56 PET (",
+      min(meteo_pcwd_PT$year, na.rm = TRUE), "–", max(meteo_pcwd_PT$year, na.rm = TRUE), ")"
     )
   ) +
   theme_bw()
 
-p_pt
+p_fao
+```  
+-->
 
-# ggsave(
-#   here("fig/pcwd_pt.pdf"),
-#   width = 8, 
-#   height = 5
-# )
-```
+The sensitivity analysis based on FAO56 PET indicated a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
 
-The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
-
-For a larger context, PCWD was calculated with the Thornthwaite (temperature-based) method to calculate the PET and PCWD over the entire available record from MeteoSwiss the station.
+For a larger context PCWD was calculated with the Thornthwaite method to calculate the PET and PCWD over the entire record.
 
 ```{r}
-
 #| label: fig-pcwd-thorn
 #| fig-cap: "Potential cumulative water deficit in Bern/Zollikofen based on Thornthwaite PET using the full available temperature record."
 #| fig-width: 8
 #| fig-height: 5
 
-# Current year only
-pcwd_thorn_current <- meteo_pcwd |>
-  filter(
-    year == current_year,
-    date < max(date, na.rm = TRUE),
-    !is.na(PCWD_THORN)
-  )
-
-# Years to highlight
-highlight_years <- c(1947, 1976, 2003, 2018, 2026)
-
-# Determine the actual Thornthwaite year range
-pcwd_thorn_year_range <- meteo_pcwd |>
-  filter(!is.na(PCWD_THORN)) |>
-  summarise(
-    first_year = min(year),
-    last_year = max(year)
-  )
-
-# Combine highlighted historical years with the current year
-pcwd_thorn_highlight <- bind_rows(
-  meteo_pcwd |>
-    filter(
-      year %in% c(1947, 1976, 2003, 2018),
-      !is.na(PCWD_THORN)
-    ),
-  pcwd_thorn_current
-) |>
-  mutate(
-    year = factor(
-      year,
-      levels = highlight_years
-    )
-  )
-
-highlight_colours <- setNames(
-  c("#D73027", "#4575B4", "#E69F00", "#009E73", "#CC79A7"),
-  as.character(highlight_years)
-)
+meteo_pcwd_THORNTWAITE <- meteo_pcwd |> 
+  slice_head(n = -1) |> # drop last line which appears to be set to pcwd_mm = 0
+  filter(!is.na(PCWD_THORN)) # subset years from 2010 on
 
 p_thorn <- ggplot() +
   geom_line(
-    data = meteo_pcwd |>
-      filter(
-        !year %in% highlight_years,
-        !is.na(PCWD_THORN)
-      ),
-    aes(
-      x = doy,
-      y = PCWD_THORN,
-      group = year
-    ),
+    data = meteo_pcwd_THORNTWAITE |> filter(!year %in% highlight_years),
+    aes(x = doy, y = PCWD_THORN, group = year),
     colour = "grey75",
     linewidth = 0.4,
     alpha = 0.5
   ) +
   geom_line(
-    data = pcwd_thorn_highlight,
-    aes(
-      x = doy,
-      y = PCWD_THORN,
-      colour = year,
-      group = year
-    ),
-    linewidth = 0.6
+    data = meteo_pcwd_THORNTWAITE |>  filter(year %in% highlight_years),
+    aes(x = doy, y = PCWD_THORN, colour = as.factor(year), group = year),
+    linewidth = 0.5
   ) +
-
+  # add labels to maximum (first highlight years, then for 5 largest non-highlight years)
+  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_THORN == max(PCWD_THORN)),
+    aes(x = doy, y = PCWD_THORN, colour = as.factor(year), label = year),
+    vjust = -0.1, show.legend = FALSE
+  ) +
+  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(!year %in% highlight_years) |>
+      group_by(year) |>
+      # keep only yearly maxima:
+      filter(PCWD_THORN == max(PCWD_THORN)) |>
+      # keep only years among the top 5 maxima
+       ungroup() |> arrange(desc(PCWD_THORN)) |> slice(1:5),
+    aes(x = doy, y = PCWD_THORN, label = year),
+    vjust = -0.1, show.legend = FALSE, color = "grey75"
+  ) + 
   scale_colour_manual(
     values = highlight_colours,
-    breaks = as.character(highlight_years),
     name = "Year"
   ) +
-
   labs(
     x = "Day of year",
     y = "PCWD (mm)",
     title = "Potential cumulative water deficit",
     subtitle = paste0(
       "Bern-Zollikofen, Thornthwaite PET (",
-      pcwd_thorn_year_range$first_year,
-      "–",
-      pcwd_thorn_year_range$last_year,
-      ")"
+      min(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE), "–", max(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE), ")"
     )
   ) +
-
-  theme_bw()
+  general_plot_theme +
+  theme(
+    legend.position = "inside", legend.position.inside = c(0.01,1),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
+  )
 
 p_thorn
 
 ggsave(
-  here("fig/pcwd_pt_thorntwaite.pdf"),
+  here("fig", "pcwd_thorntwaite.pdf"),
   width = 8,
   height = 5
 )
 ```
 
-The Thornthwaite-based reconstruction extends the PCWD record back to 1864 and provides a longer historical context for the current drought. Although Thornthwaite generally produces lower absolute PCWD values than Priestley–Taylor, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+The Thornthwaite-based reconstruction allows to extend the PCWD record back to 1864 and thus provides a longer historical context for the current drought. Although the Thornthwaite method generally produces lower absolute PCWD values than the Priestley–Taylor method, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
 
-## Soil moisture
+#### Spatial visualization of current PCWD
 
-The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
+To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from the global [ERA5-Land-T reanalysis dataset](https://doi.org/10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
 
-[Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
+Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date and the temporal evolution of the region.
 
-For the site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
+```{css, echo=FALSE}
+/*|  include: false */
+/*Below is needed to have the color squares in the colorbin legend nicely left-aligned.*/
+figure.quarto-float div.leaflet-control {
+  text-align: left !important;
+}
+```
 
-### Soil water potential in Bremgartenwald, Bern
+```{r, fig.cap= paste0("Potential cumulative water deficit across central Europe on ", date_to_plot, " from ERA5-Land reanalysis data (using Priestley Taylor PET).")}
+#| label: fig-map-pcwd-era5
+#| fig-width: 8
+#| fig-height: 5
 
-At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil. 
+# laad data for ERA5-Land map and ERA5-Land timeseries
+cwd_ERA5Land <- terra::rast(
+  here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc") # or "regionBern.nc" or "regionEUROPE.nc"
+)
+cwd_ERA5Land_df <- dplyr::bind_rows(
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
+  tidync::hyper_tibble(here("data-dynamic/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
+) |> mutate(time = lubridate::ymd(time))
+
+# plot ERA5-Land map
+date_to_plot <- "2026-07-15"
+raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
+
+# Define similar palette to vhi:
+# CONTINUOUS PALETTE:
+# pal_ERA5LAND_PCWD <- colorNumeric(
+#   #palette = "viridis",
+#   palette = rev(vhi_cols),
+#   domain = values(raster_to_plot_ERA5LAND_PCWD),
+#   na.color = "transparent"
+# )
+# Discretized PALETTE:
+pal_ERA5LAND_PCWD <- colorBin(
+  palette = rev(vhi_cols),
+  domain = values(raster_to_plot_ERA5LAND_PCWD),
+  bins = 15,
+  na.color = "transparent"
+)
+
+# Prepare the regional average time series plot (will be embedded into the map)
+cwd_ERA5Land_df_mean <- cwd_ERA5Land_df |> 
+  group_by(time) |> summarise(pcwd_mm = mean(pcwd_mm)) |> 
+  slice_head(n = -1) # drop last line which appears to be set to pcwd_mm = 0
+
+plt_ERA5Land_temp <- ggplot(cwd_ERA5Land_df_mean, aes(x = time, y=pcwd_mm)) +
+  geom_line() + 
+  theme_bw() + 
+  labs(x=NULL, y= "Region average of PCWD (mm)") + 
+  geom_vline(xintercept = ymd(date_to_plot), color = "red") +
+  scale_x_date(NULL, date_breaks = "2 month", date_minor_breaks = "1 month", date_labels = "%b") + # \n%Y
+  geom_text(data = \(df) slice(df, 1),  # this forces annotation only once
+            x = ymd(date_to_plot), y = Inf, 
+            label = "Map\ndate", color = "red", vjust=1.2, hjust = -0.5, angle = 270) + # vjust=-0.2
+  general_plot_theme
+
+# render the plot to a PNG and encode as data URI for embedding as inset into map
+tmp_png <- tempfile(fileext = ".png")
+ggsave(filename = tmp_png, plot = plt_ERA5Land_temp + labs(y=NULL),
+       width = 600, height = 220, units = "px", dpi = 150)
+img_uri <- base64enc::dataURI(file = tmp_png, mime = "image/png")
+
+# generate map as leaflet
+leaflet() |>
+  addMapPane("basemap", zIndex = 1) |> # NOTE: pane is a fix to better control order
+  addProviderTiles(providers$SwissFederalGeoportal.NationalMapGrey, group = "swisstopo Topo",       options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addLayersControl(
+    baseGroups = c("swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale", "No background"),
+    overlayGroups = c(sprintf("ERA5-Land PCWD (%s)", date_to_plot)),
+    position = "topleft",
+    options = layersControlOptions(collapsed = FALSE)
+  ) |>
+  # add inset image:
+  addControl(
+    position = "topleft",
+    html = paste0("<style>
+                  .leaflet-control-layers { width:220px !important; box-sizing:border-box; }
+                  </style>", 
+                  sprintf(
+                    "<div style='width:%dpx;background:rgba(255,255,255,0.95);border-radius:4px;'><strong>Region average PCWD (mm)</strong><br/><img src='%s' style='width:100%%;height:auto;display:block;'/></div>",
+      220-16, img_uri)) # 220px - 2*8px padding
+  ) |>
+  # add main raster image:
+  addRasterImage(
+    raster_to_plot_ERA5LAND_PCWD,
+    colors = pal_ERA5LAND_PCWD,
+    opacity = 0.75,
+    group = sprintf("ERA5-Land PCWD (%s)", date_to_plot),
+    attribution = paste(
+      "\n&copy; Copernicus Climate Change Service information (2019). Muñoz Sabater, J. (2019): ERA5-Land hourly data from 1950 to present. Copernicus Climate Change Service (C3S) Climate Data Store (CDS). DOI: 10.24381/cds.e2161bac (Accessed on 16-Jul-2026) Generated using or contains modified Copernicus Climate Change Service information <2019>. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains."
+    )
+  ) |>
+  addLegend(
+    position = "topright",
+    pal = pal_ERA5LAND_PCWD, 
+    values = values(raster_to_plot_ERA5LAND_PCWD), 
+    opacity = 1,
+    title = "PCWD (mm)"
+  )
+```
+
+## Soil water
+
+At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil (soil water potential) at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
 
 ```{r}
+#| label: fig-swp
+#| fig-cap: "Seasonal dynamics of soil water potential at different landscape positions (above Aare river) and soil depths in 2025 and 2026."
+#| fig-width: 8
+#| fig-height: 6.4
 
 df_SWP_plot <- df_SWP |>
   mutate(
@@ -325,142 +494,88 @@ df_SWP_plot <- df_SWP |>
     # Keep the desired panel order
     plot = factor(
       tree_name,
-      levels = c("P1", "P2", "P3")
+      levels = c("P3", "P2", "P1", "G1"), labels = c("High","Mid","Low", "G1")
     )
   ) |>
   filter(
     year %in% c("2025", "2026"),
-    tree_name %in% c("P1", "P2", "P3"),
+    plot %in% c("High","Mid","Low"),
     !is.na(SWP_mean),
     !is.na(depth)
   )
 
-p1 <- ggplot(
-  df_SWP_plot,
-  aes(
-    x = plot_date,
-    y = SWP_mean,
-    colour = depth,
-    linetype = year,
-    group = interaction(year, depth)
-  )
-) +
+p1 <- 
+  ggplot(
+    df_SWP_plot,
+    aes(
+      x = plot_date,
+      y = SWP_mean,
+      colour = year,
+    )
+  ) +
   geom_line(
     linewidth = 0.7,
     alpha = 0.9,
     na.rm = TRUE
   ) +
-  facet_wrap(
-    ~plot,
-    ncol = 1,
-    scales = "fixed"
+  facet_grid(
+    cols = vars(plot),
+    rows = vars(depth),
+    scales = "fixed",
+    labeller = labeller(depth = label_both,
+                        .default = label_value)
   ) +
   scale_colour_manual(
-    values = c(
-      "10 cm"  = "#F57C00",
-      "40 cm"  = "#4682B4",
-      "60 cm"  = "#2E8B57",
-      "100 cm" = "#7B1FA2"
-    ),
+    values = c(highlight_colours, c("2025" = "darkgrey")),
     drop = FALSE
   ) +
-  scale_linetype_manual(
-    values = c(
-      "2025" = "dashed",
-      "2026" = "solid"
-    )
-  ) +
   scale_x_date(
-    date_breaks = "1 month",
+    date_breaks = "2 month",
+    date_minor_breaks = "1 month",
     date_labels = "%b",
     limits = as.Date(c("2000-01-01", "2000-12-31")),
     expand = expansion(mult = c(0.01, 0.01))
   ) +
+  scale_y_logModulus() + 
   labs(
-    title = "Seasonal dynamics of soil matric potential",
-    subtitle = paste(
-      "Comparison of the complete 2025 record with the",
-      "available measurements from 2026."
-    ),
+    title = "Seasonal dynamics of soil water potential",
     x = NULL,
-    y = "Soil matric potential (kPa)",
-    colour = "Soil depth",
-    linetype = "Year",
+    y = "Soil water potential (kPa)",
+    colour = NULL,
     caption = paste(
       "More negative values indicate drier soil conditions."
     )
   ) +
-  guides(
-    colour = guide_legend(
-      order = 1,
-      nrow = 1,
-      byrow = TRUE
-    ),
-    linetype = guide_legend(order = 2)
-  ) +
-  theme_classic(base_size = 13) +
+  general_plot_theme +
   theme(
-    plot.title = element_text(
-      face = "bold",
-      size = 16
-    ),
-    plot.subtitle = element_text(
-      colour = "grey30",
-      margin = margin(b = 10)
-    ),
-    strip.text = element_text(
-      face = "bold",
-      size = 12
-    ),
-    strip.background = element_blank(),
-    legend.position = "top",
-    legend.box = "vertical",
-    legend.justification = "left",
-    axis.text.x = element_text(
-      angle = 0,
-      hjust = 0.5
-    ),
-    panel.spacing = grid::unit(1, "lines"),
-    plot.caption = element_text(
-      colour = "grey40",
-      hjust = 0
-    )
+    legend.position = "inside", legend.position.inside = c(0.01,0.01),  legend.justification = c(0,0),
+    legend.direction = "vertical", legend.box = "vertical"
   )
 
 p1
 ```
 
-The graphic displays the soil matric potential at three different locations in the Bremgartenwald. P1 is the site that is closest to the Aare, P2 is further away from the Aare and P3 is the site furthest away from the Aare. In general the the further away the site is from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. The depth of the measurement also influences how dry the soil becomes. The further down in the soil, the lower the maximum dryness. 
+In general, the further away from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. Tree water use can also be different with soil depth depending on the root distributions. Typically, deeper soil layers remain wetter due to reduced root water uptake. However, in the above measurements the main dry-out of the soil in 2025 and 2026 was similar across all soil depths (except for the position close to the Aare).
+
+In 2026, soil water dry-out started much earlier than in 2025.
 
 
-## 3. Tree water deficit
+## Tree water deficit
 
-TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
+As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential (shown above) describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
 
-Currently, the highest proportions of trees classified as experiencing high or very high water deficit are found among Scots pine (Pinus sylvestris), silver fir (Abies alba), European ash (Fraxinus excelsior), and downy oak (Quercus pubescens). In contrast, species such as hazel (Corylus avellana) and Douglas fir (Pseudotsuga menziesii) still show a comparatively large share of individuals without measurable water stress.
+```{r}
+#| label: fig-twd
+#| fig-cap: "Seasonal dynamics of tree water deficit at different landscape positions (above Aare river) in 2025 and 2026."
+#| fig-width: 8
+#| fig-height: 5
 
-Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
-
-![TreeNet TWD Overview](https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg)
-
-On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
-
-[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/)
-
-### Tree water deficit Bremgartenwald
-
-As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
-
-The following graphic compares tree water deficit measurements of 2025 with 2026.
-
-```{R}
 df_TWD_blog <- df_TWD |>
   mutate(
     year = factor(
       lubridate::year(date),
       levels = c(2025, 2026)
     ),
-
     # Place both years on the same seasonal x-axis
     plot_date = as.Date(
       sprintf(
@@ -469,15 +584,13 @@ df_TWD_blog <- df_TWD |>
         lubridate::day(date)
       )
     ),
-
     # Extract site identifier and define panel order
     site = stringr::str_sub(tree_name, -2, -1),
 
-    site = factor(
+    plot = factor(
       site,
-      levels = c("P1", "P2", "P3")
+      levels = c("P3", "P2", "P1", "G1"), labels = c("High","Mid","Low", "G1")
     ),
-
     # Short common names for clearer facet labels
     species = factor(
       tree_genus_species,
@@ -493,7 +606,7 @@ df_TWD_blog <- df_TWD |>
   ) |>
   filter(
     year %in% c("2025", "2026"),
-    site %in% c("P1", "P2", "P3"),
+    plot %in% c("High","Mid","Low"),
     tree_genus_species %in% c(
       "Abies alba",
       "Fagus sylvatica"
@@ -505,6 +618,7 @@ df_TWD_blog <- df_TWD |>
     plot_date,
     year,
     site,
+    plot,
     species
   ) |>
   summarise(
@@ -519,7 +633,6 @@ p_twd_blog <- ggplot(
     x = plot_date,
     y = TWD_mean,
     colour = year,
-    linetype = year,
     group = year
   )
 ) +
@@ -529,21 +642,13 @@ p_twd_blog <- ggplot(
     na.rm = TRUE
   ) +
   facet_grid(
+    cols = vars(plot),
     rows = vars(species),
-    cols = vars(site),
     scales = "fixed"
   ) +
   scale_colour_manual(
-    values = c(
-      "2025" = "#6F6F6F",
-      "2026" = "#0072B2"
-    )
-  ) +
-  scale_linetype_manual(
-    values = c(
-      "2025" = "dashed",
-      "2026" = "solid"
-    )
+    values = c(highlight_colours, c("2025" = "darkgrey")),
+    drop = FALSE
   ) +
   scale_x_date(
     limits = as.Date(c("2000-04-01", "2000-10-31")),
@@ -552,15 +657,10 @@ p_twd_blog <- ggplot(
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   labs(
-    title = "Tree water deficit across species and sites",
-    subtitle = paste(
-      "Seasonal development in 2025 and 2026.",
-      "Solid lines show 2026; dashed lines show 2025."
-    ),
+    title = "Tree water deficit across species",
     x = NULL,
     y = "Mean tree water deficit (\u00b5m)",
-    colour = "Year",
-    linetype = "Year",
+    colour = NULL,
     caption = paste(
       "Silver fir corresponds to Abies alba; European beech to Fagus sylvatica.\nHigher values indicate greater depletion of water stored in the elastic",
       "tissues of the stem."
@@ -570,82 +670,29 @@ p_twd_blog <- ggplot(
     colour = guide_legend(order = 1),
     linetype = guide_legend(order = 1)
   ) +
-  theme_classic(base_size = 13) +
+  general_plot_theme +
   theme(
-    plot.title = element_text(
-      face = "bold",
-      size = 16
-    ),
-    plot.subtitle = element_text(
-      colour = "grey30",
-      margin = margin(b = 10)
-    ),
-    strip.text = element_text(
-      face = "bold",
-      size = 11
-    ),
-    strip.background = element_blank(),
-    legend.position = "top",
-    legend.justification = "left",
-    axis.text.x = element_text(
-      angle = 0,
-      hjust = 0.5
-    ),
-    panel.spacing = grid::unit(1, "lines"),
-    plot.caption = element_text(
-      colour = "grey40",
-      hjust = 0,
-      margin = margin(t = 10)
-    ),
-    plot.margin = margin(
-      t = 10,
-      r = 20,
-      b = 10,
-      l = 15
-    )
+    legend.position = "inside", legend.position.inside = c(0.01,1.0),  legend.justification = c(0,1),
+    legend.direction = "vertical", legend.box = "vertical"
   )
 
 p_twd_blog
 ```
 
-For the tree water deficit measurements a similar pattern to the soil water potential is visible across sites. The site that is furthest away from the Aare shows the strongest tree water deficit. 
+For the tree water deficit measurements a similar pattern to the soil water potential is visible with distance to the Aare. The location that is furthest away from the Aare shows the strongest tree water deficit. 
+
+In 2026, tree water deficit increases earlier than in 2025.
 
 ## Vegetation Health Index (VHI)
 
 The [SwissEO Vegetation Health Index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) combines Sentinel-2-derived Normalised Difference Vegetation Index (NDVI) observations with with land surface temperature data to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
 
-The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation was experiencing noticeable stress in the second half of June. With the warm current temperature the VHI is likely to further decrease over the coming days. 
+The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation is experiencing noticeable stress. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
-```{r}
-#| label: map-vhi
-#| fig-cap: "Latest swissEO Vegetation Health Index around Bern."
-
-# VHI auf gültigen Bereich begrenzen
-vhi_plot_data <- vhi_plot_data |>
-  mutate(vhi = ifelse(vhi < 0 | vhi > 100, NA, vhi))
-
-# Aus x/y/vhi wieder ein Raster machen
-vhi_rast <- terra::rast(
-  vhi_plot_data |> select(x, y, vhi),
-  type = "xyz",
-  crs = "EPSG:2056"
-)
-
-# Für leaflet nach WGS84 transformieren
-vhi_rast_wgs84 <- terra::project(vhi_rast, "EPSG:4326", method = "near")
-
-# Klassenfarben gemäss swissEO
-vhi_cols <- c(
-  "#b56a29", # Extremely stressed
-  "#ce8540", # Very stressed
-  "#f5cd85", # Stressed
-  "#fff5ba", # Slightly stressed
-  "#cbffca", # Normal
-  "#52bd9f", # Good
-  "#0470b0"  # Excellent
-)
-
-vhi_bins <- c(0, 10, 20, 30, 40, 50, 60, 100)
+```{r, fig.cap = paste('Latest swissEO Vegetation Health Index around Bern (dating from', unique(vhi_stats$date), ').')}
+#| label: fig-map-vhi_latest
+#| fig-width: 8
+#| fig-height: 5
 
 pal_vhi <- colorBin(
   palette = vhi_cols,
@@ -655,24 +702,40 @@ pal_vhi <- colorBin(
   right = FALSE
 )
 
-leaflet() |>
-  addProviderTiles(providers$Esri.WorldImagery, group = "World Imagery") |>
-  addProviderTiles(providers$Esri.WorldTopoMap, group = "World Topo") |>
-  addRasterImage(
-    vhi_rast_wgs84,
-    colors = pal_vhi,
-    opacity = 0.75,
-    group = "VHI"
-  ) |>
+raster_groups <- paste0("VHI ", time(vhi_rast_wgs84))
+
+vhi_map <- leaflet() |>
+  addMapPane("basemap", zIndex = 1) |> # NOTE: pane is a fix to better control order
+  addProviderTiles(providers$SwissFederalGeoportal.NationalMapGrey, group = "swisstopo Topo",       options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$SwissFederalGeoportal.SWISSIMAGE,      group = "swisstopo SWISSIMAGE", options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
+  addProviderTiles(providers$Stadia.StamenTonerLite,                group = "Stamen Greyscale",     options = providerTileOptions(opacity = 1.0, pane = "basemap")) |>
   addLayersControl(
-    baseGroups = c("World Imagery", "World Topo"),
-    overlayGroups = c("VHI"),
+    baseGroups = c("No background", "swisstopo Topo", "swisstopo SWISSIMAGE", "Stamen Greyscale"),
+    overlayGroups = raster_groups,
     position = "topleft",
     options = layersControlOptions(collapsed = FALSE)
-  ) |>
+  ) 
+
+for (i in seq_along(raster_groups)){
+  vhi_map <- vhi_map |>
+    addRasterImage(
+      vhi_rast_wgs84[[i]],
+      colors = pal_vhi,
+      opacity = 1.0, # 0.75 # since VHI map is only forested areas we can easily use 1.0
+      group = raster_groups[i],
+      attribution = paste(
+        "VHI layer: \n&copy; swisstopo, Contains modified Copernicus Sentinel data 2026"
+      )
+    )
+}
+
+vhi_map <- vhi_map |>
+  hideGroup(raster_groups[-1]) |>
+  showGroup(raster_groups[1]) |>
   addLegend(
     position = "bottomright",
     colors = vhi_cols,
+    opacity = 1,
     labels = c(
       "0–9: Extremely stressed",
       "10–19: Very stressed",
@@ -683,27 +746,58 @@ leaflet() |>
       "60–100: Excellent"
     ),
     title = "VHI"
-  ) |>
-  addControl(
-    html = "© swisstopo, Contains modified Copernicus Sentinel data 2026",
-    position = "bottomleft"
   )
+vhi_map
 ```
 
 
-### Overview statistics
-```{r}
-#| label: tbl-vhi-stats
-#| echo: false
+Error sources such as clouds can potentially lead to anomalous values for certain dates. 
+Note that the above map is automatically generated and has not necessarily been checked visually.
 
-vhi_stats |>
-  mutate(across(where(is.numeric), ~ round(.x, 1)))
-```
+## Current drought status summary
 
-## 5. Current drought status summary
-
-Taken together, the different indicators paint a consistent picture. Spring and early summer were characterized by increasing atmospheric water demand and below-average moisture availability.
+Taken together, the different indicators paint a consistent picture. Spring and early summer of 2026 were characterized by increasing atmospheric water demand and below-average moisture availability. Compared to 2025, these drought indicators increased earlier than 2025.
 
 This signal is reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
 Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress.
+
+## Appendix: links for whole Switzerland
+
+Looking beyond the Bern area, below appendices provide further resources on national level for Switzerland.
+
+
+### Appendix A - Soil water across Switzerland (SwissSMEX and SwissSPOT)
+
+The SwissSMEX and SwissSPOT monitoring networks provide continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
+
+[Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
+
+For the SwissSMEX site in Bern the soil moisture anomaly in the current year is slightly outside of the 5-95 percentile showing the current year is exceptional. It is comparable to some of the dry years of 2022 and 2023. With the warm and dry weather that is predicted for the next days soil moisture anomaly is likely to decrease even further.
+
+[Open SwissSPOT Monitoring Dashboard](https://www.wsl.ch/de/projekte/swissspot-swiss-forest-soil-water-potential-network/){.btn .btn-primary}
+
+
+### Appendix B - Tree water deficit across Switzerland (TreeNet)
+
+TreeNet provides near-real-time observations of tree water deficit (TWD), an indicator of the water status of individual trees. The data reveal substantial differences among species, but a common pattern emerges across Switzerland: many trees are already experiencing elevated water stress despite the relatively early stage of the summer season.
+
+Currently, the highest proportions of trees classified as experiencing high or very high water deficit are found among Scots pine (Pinus sylvestris), silver fir (Abies alba), European ash (Fraxinus excelsior), and downy oak (Quercus pubescens). In contrast, species such as hazel (Corylus avellana) and Douglas fir (Pseudotsuga menziesii) still show a comparatively large share of individuals without measurable water stress.
+
+Regional differences are also apparent. The southern Alps and the Pre-Alps currently exhibit the largest fractions of trees in the high and very high deficit categories, whereas the Jura and parts of the Swiss Plateau still contain a larger proportion of trees with little or no water deficit. Nevertheless, signs of water stress are present across all regions.
+
+```{r}
+#| label: fig-app-treenet
+#| fig-width: 5
+#| fig-cap: TreeNet TWD Overview
+knitr::include_graphics("https://treenet.info/wp-content/uploads/Drought_Indicators_norm-1200x686.jpg")
+```
+
+On the following website there is a more detailed break down of the current tree water deficit and the growth performance per species across sites in Switzerland.
+
+[TreeNet TWD Overview per Species](https://treenet.info/nowcasts/tree-signals/){.btn .btn-primary}
+
+### Appendix C - Vegetation health index across Switzerland (swisstopo)
+
+The full [vegetation health index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) across Switzerland can be checked at swisstopo:
+[Open swisstopo VHI map viewer](https://map.geo.admin.ch/?layers=ch.swisstopo.swisseo_vhi_v100){.btn .btn-primary}
