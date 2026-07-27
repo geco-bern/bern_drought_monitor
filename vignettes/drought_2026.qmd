@@ -139,7 +139,7 @@ This drought monitor combines several complementary variables to assess the curr
 
   - Potential cumulative water deficit (derived from local MeteoSchweiz station and from ERA5-Land climate reanalysis).
   - Soil water potential (local measurements by [GECO](https://geco-group.org/), University of Bern)
-  - Tree water deficit (local measurements by [GECO](https://geco-group.org/), University of Bern))
+  - Tree water deficit (local measurements by [GECO](https://geco-group.org/), University of Bern)
   - Vegetation Health Index, [SwissEO VHI](https://www.swisstopo.admin.ch/de/satellitenbilder-swisseo-vhi) (satellite-derived product by swisstopo)
 
 ::: {.callout-note}
@@ -244,8 +244,8 @@ p_pt <- ggplot() +
 
 p_pt
 
-# # uncomment for saving as separate plot file
-# ggsave(here::here("fig", "pcwd_pt.pdf"), width = 8, height = 5)
+# uncomment for saving as separate plot file
+ggsave(here::here("fig", "pcwd_pt.png"), width = 8, height = 5)
 ```
 
 **Finding**
