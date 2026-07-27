@@ -132,34 +132,42 @@ source(here::here("R", "plot_helper.R"))
 
 ## Overview
 
-Drought conditions have intensified across parts of Switzerland during spring and early summer 2026. A combination of below-average precipitation and increasing atmospheric evaporative demand has lead to signals of increasing drought stress since April.
+This drought monitor combines several complementary variables to assess the current drought situation with a focus on the region of Bern, Switzerland: 
+  - Potential cumulative water deficit (derived from local MeteoSchweiz station and from ERA5-Land climate reanalysis).
+  - Soil water potential (local measurements by [GECO](https://geco-group.org/), University of Bern)
+  - Tree water deficit (local measurements by [GECO](https://geco-group.org/), University of Bern))
+  - Vegetation Health Index, [SwissEO VHI](https://www.swisstopo.admin.ch/de/satellitenbilder-swisseo-vhi) (satellite-derived product by swisstopo)
 
-This drought monitor combines several complementary indicators to assess the current drought situation: 
-  - the potential cumulative water deficit (derived from local meteorological observations or ERA5-Land),
-  - local soil water potential observations
-  - tree water deficit observations
-  - and satellite-based vegetation health metrics from swisstopo. 
+::: {.callout-note}
+## Explainer: What do different variables measure?
 
-The combinations of these indicators provides insights into the severity of ongoing dry conditions with respect to the atmosphere, the soil, and the vegetation.
+  - Potential cumulative water deficit: Measures primarily the *meteorological drought* condition, but closely reflects soil moisture drying due to its consideration of the *balance* of water inputs (precipitation) and losses (evapotranspiration).
+  - Soil water potential: Measures *soil moisture drought* in pressure units. In contrast to soil water *content* in mass or volumetric units, the soil water *potential* measures the force plants have to overcome to extract water from the soil matrix. It is therefore closely reflective of the physiological effects of water stress a plant is exposed to. 
+  - Tree water deficit: Measures the actual water stress experienced by a tree. Derived from the daily swelling (during the night) and contraction (during the day) of the trunk. Anomalously small swelling and strong contraction yields a high tree water deficit and is indicative of low water availability in the rooting zone of the respective tree. The advantange of tree water deficit measurements over soil water potential measurements is that they naturally integrate over the actual rooting zone of the tree, while soil water potential measurements are only indicative of conditions at the soil depth where the sensor is placed.
+  - Vegetation Health Index measures impacts of drought on vegetation health, that is greenness and its activity (transpiration). The [SwissEO Vegetation Health Index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) combines Sentinel-2-derived Normalised Difference Vegetation Index (NDVI) observations with with land surface temperature (LST) data to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts. LST reflects vegetation activity as transpiration cools the surface and hence a high land surface temperature can indicate low transpiration rates and hence vegetation water stress. The advantage of this satellite-derived index is that it naturally captures conditions across space. The disadvantage is that it is affected by larger noise in observations, limiting its reliability and interpretability.
 
-The figures below allow to monitor the current drought stress around Bern and across Switzerland as of today (see date in header).
+:::
+
+The combinations of these variables provides insights into the severity of current drought conditions with respect to the atmosphere, the soil, and the vegetation.
 
 ## Meteorological drought
 
-To put current meteorological drought conditions in perspective, we compare potential cumulative water deficit (PCWD) in 2026 against past years at the MeteoSwiss station Bern/Zollikofen.
-
-PCWD was calculated from daily precipitation minus potential evapotranspiration (PET) using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The estimate of PCWD uses Priestley–Taylor PET based on estimated net radiation. (The sensitivity of the results to the choice of PET calculation was assessed by additionally estimating PCWD with the Penman-Monteith (FAO56) and Thornthwaite methods. Results were consistent.)
+To put current meteorological drought conditions in perspective, we compare potential cumulative water deficit (PCWD) in 2026 against past years. PCWD is derived from temperature and radiation measurements obtained from the MeteoSwiss station Bern/Zollikofen.
 
 ### Potential cumulative water deficit (PCWD)
 
 ::: {.callout-note}
 ## Explainer: potential cumulative water deficit
 
-Potential cumulative water deficit (PCWD) describes the accumulated atmospheric water demand that is not compensated by precipitation. It is calculated from the daily water balance between precipitation and potential evapotranspiration (PET). Increasing PCWD values indicate increasing drought stress, while decreases indicate periods where precipitation partly or fully compensates the accumulated deficit.
+Potential cumulative water deficit (PCWD) describes the accumulated atmospheric water demand that is not compensated by precipitation. It is calculated as the running sum of potential evapotranspiration (PET) minus precipitation, whereby negative values (water surplus) are not accumulated and reset to zero at each time step (day). Increasing PCWD values indicate progressive soil drying and increasing drought stress of vegetation. Periods with decreasing PCWD indicate conditions where precipitation exceeds PET and reduces and re-wets the rooting zone of vegetation.
+
+PCWD is calculated here from daily precipitation and potential evapotranspiration (PET) data using the `cwd::cwd()` algorithm (described [here](https://geco-bern.github.io/cwd/index.html)). The estimate of PCWD uses Priestley–Taylor PET based on estimated net radiation. Net radiation was estimated from incoming solar and thermal radiation measurements, assuming albedo = 0.23, and surface emissivity = 0.98.
 
 :::
 
-#### Historic context of current PCWD
+#### PCWD of current vs. recent years
+
+Radiation measurements are available from MeteoSchweiz station Bern/Zollikofen only since 2010. Results for the Priestley-Taylor derived PCWD are thus only available for these years.
 
 ```{r}
 #| label: fig-pcwd
@@ -236,9 +244,13 @@ p_pt
 # ggsave(here::here("fig", "pcwd_pt.pdf"), width = 8, height = 5)
 ```
 
-The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent warm and dry weather, highlighting the exceptional dryness of the current growing season. 
+**Finding**
 
-For a larger context, PCWD was calculated with the Thornthwaite (temperature-based) method to calculate the PET and PCWD over the entire available record from MeteoSwiss the station.
+The PCWD for the current year is substantially higher than observed at the same time of year in the last 17 years in Bern. This reflects the persistent lack of precipitation combined with exceptionally high evaporative demand caused by the recent hot and dry atmospheric conditions, highlighting the exceptional dryness of the current growing season. 
+
+#### PCWD of current year vs. long historical context
+
+Potential evapotranspiration may also be estimated from air temperature, using the Thorntwaite method. This yields less reliable results, but has the advantage that we're not limited to years for which radiation data was made available for the MeteoSchweiz station Bern/Zollikofen. We're presenting PCWD based on Thorntwaite-derived PET here as an alternative, thus providing a longer historical context.
 
 <!-- 
 
@@ -281,10 +293,6 @@ p_fao <- ggplot() +
 p_fao
 ```  
 -->
-
-The sensitivity analysis based on FAO56 PET indicated a very similar seasonal evolution of PCWD compared with the Priestley–Taylor approach. The current year clearly stands out from the previous 15 years in both methods, indicating that the exceptionally high water deficit is not sensitive to the choice of PET formulation.
-
-For a larger context PCWD was calculated with the Thornthwaite method to calculate the PET and PCWD over the entire record.
 
 ```{r}
 #| label: fig-pcwd-thorn
@@ -359,13 +367,17 @@ p_thorn
 # )
 ```
 
-The Thornthwaite-based reconstruction allows to extend the PCWD record back to 1864 and thus provides a longer historical context for the current drought. Although the Thornthwaite method generally produces lower absolute PCWD values than the Priestley–Taylor method, the seasonal pattern is very similar. In 2026, the water deficit began to increase early and rose rapidly during spring and early summer. By the latest available date, PCWD was higher than at the same point in any other year in the 1864–2026 record. Previous drought years such as 2018, 2022 and 2023 also reached high deficits, but their strongest increases occurred later in the season.
+**Finding**
 
-#### Spatial visualization of current PCWD
+The historical drought year of 1947 featured even higher PCWD than are currently attained in 2026. However, given the timing in the season, 2026 stands out as (by far) unprecedented. In no other years since measurements began did the PCWD attain such high values by mid-July as in 2026. Given that the PCWD typically continues rising in throughout August and Septempter, it is to be expected that the 1947 record PCWD (then attained in fall) will be broken. 
 
-To illustrate the current spatial extent, we additinally derived potential cumulative water deficit (PCWD) from the global [ERA5-Land-T reanalysis dataset](https://doi.org/10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+Note that the Thorntwaite-based method yields somewhat different results than the Priestley-Taylor-based PCWD shown above. For example, based on Thorntwaite, 2023 attained higher values than are currently recorded in 2026. Based on Priestley-Taylor, however, the 2026 PCWD has already exceeded the highest value attained in 2023.
 
-Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date and the temporal evolution of the region.
+#### Spatial visualisation of current PCWD
+
+To illustrate the current spatial distribution across Switzerland, we additinally PCWD from the global [ERA5-Land climate reanalysis dataset](https://doi.org/10.24381/cds.e2161bac) of the ongoing year. This approach uses also the Priestley–Taylor PET method.
+
+Below map shows the spatial distribution of the PCWD across Switzerland at the indicated date, whith the temporal evolution of the region shown by the inset.
 
 ```{css, echo=FALSE}
 /*|  include: false */
@@ -472,9 +484,17 @@ leaflet() |>
   )
 ```
 
-## Soil water
+**Finding**
 
-At the Bremgartenwald in Bern there is a collaboration project of the WSL and the University of Bern for measuring the dryness of the soil (soil water potential) at different landscape positions. The three positions (high, mid and low) indicate the vertical distance to the Aare river (or neareast drainage channel).
+The PCWD is not evenly distributed across Switzerland. Highest values are attained around the region of Zurich, Zürcher Unterland, Schaffhausen, Basel, Lausanne, and the southern tip of Ticino. Across the Voralpen and main ridge of the Alps (Alpenhauptkamm), PCWD is substantially lower.
+
+Note however, that precipitation data from ERA5-Land (an input to PCWD) may not be fully reliable, in particular across mountain regions. This likely underlies the result that the Rhone valley of the Valais features low PCWD values here, despite documented dryness in that region.
+
+## Soil water potential
+
+Soil water potentials are measured along a forested hillslope near Bern, stretching from an area adjacent to the river Aare to an elevated (flat) position ca. 80 m above the river. The three positions (high, mid and low in plots below) indicate the height above the Aare river--the neareast drainage channel.
+
+The measurement campaign was started in 2025 and is supported by the [Burgergemeinde Bern](https://www.bgbern.ch/), and [Dr. Roman Zweifel (WSL, Birmensdorf)](https://www.wsl.ch/de/mitarbeitende/zweifel/) through the [UPSCALE project](https://www.wsl.ch/de/projekte/upscale/).
 
 ```{r}
 #| label: fig-swp
@@ -569,14 +589,15 @@ p1 <-
 p1
 ```
 
-In general, the further away from the Aare the drier the soil gets over the course of a summer. This is due to impact of the Aare on the groundwater table. Tree water use can also be different with soil depth depending on the root distributions. Typically, deeper soil layers remain wetter due to reduced root water uptake. However, in the above measurements the main dry-out of the soil in 2025 and 2026 was similar across all soil depths (except for the position close to the Aare).
+**Findings**
 
-In 2026, soil water dry-out started much earlier than in 2025.
+The soil has dried out much earlier in 2026 than in 2025. The current levels of the soil water potential (low values indicate dry conditions) are of similar magnitude as the driest values in 2025. However, in 2025, low values were attained much later in the season.
 
+Interestingly, the mid and especially the low position experience generally less negative soil water potentials than the high position. In other words, the higher above the Aare river, the drier the soil gets over the course of a summer. This may be due to lateral water transport along the hillslope and the influence of the river, leading to shallow groundwater tables in the low position--likely within the reach of tree roots. Tree water use can also be different with soil depth depending on the root distributions. Typically, deeper soil layers remain wetter due to reduced root water uptake. However, in the above measurements the main dry-out of the soil in 2025 and 2026 was similar across all soil depths (except for the position close to the Aare).
 
 ## Tree water deficit
 
-As part of the collaboration project of the WSL and the University of Bern tree water deficit measurements were installed in the Bremgartenwald. The tree water deficit measurements are useful for understanding the impact of dry soils on the water availability in trees. Because soil water potential (shown above) describes how easily water can be extracted from the soil. As the soil becomes drier, trees increasingly rely on water stored in their stems. This causes the stem to shrink temporarily resulting in a higher tree water deficit.
+As part of the same campaign as for the soil water potential measurements (see above), also tree water deficits were measured in the same positions. The three positions (high, mid and low in plots below) indicate the height above the Aare river--the neareast drainage channel. Measurements are distinguished for two species (Silver fir and European beech) because responses to water stress are highly species-dependent.
 
 ```{r}
 #| label: fig-twd
@@ -693,15 +714,15 @@ p_twd_blog <- ggplot(
 p_twd_blog
 ```
 
-For the tree water deficit measurements a similar pattern to the soil water potential is visible with distance to the Aare. The location that is furthest away from the Aare shows the strongest tree water deficit. 
+**Findings**
 
-In 2026, tree water deficit increases earlier than in 2025.
+Tree water deficits are as high or higher than ever recorded in 2025. However, in contrast to 2026, deficits have started rising much earlier. This indicates that water stress is has been affecting trees throughout almost the full growing season this year. In contrast, water stress effects at the high and mid positions were limited to August in 2025. This likely has important negative consequences for the carbon balance and growth of trees in 2026.
+
+The low position appears to be almost fully buffered against drought impacts in both years. 
 
 ## Vegetation Health Index (VHI)
 
-The [SwissEO Vegetation Health Index (VHI)](https://www.swisstopo.admin.ch/en/satelliteimage-swisseo-vhi) combines Sentinel-2-derived Normalised Difference Vegetation Index (NDVI) observations with with land surface temperature data to provide an indication of vegetation stress. The index ranges from 0 to 100, where lower values indicate less healthy vegetation and a higher likelihood of drought-related impacts.
-
-The map below shows the most recent VHI data available for the city of Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation is experiencing noticeable stress. With the warm current temperature the VHI is likely to further decrease over the coming days. 
+The map below shows the most recent VHI data available for the region around Bern region (`r unique(vhi_stats$date)`). The median VHI across the study area was `r round(vhi_stats$median_vhi, 1)`, with values ranging from `r round(vhi_stats$min_vhi, 1)` to `r round(vhi_stats$max_vhi, 1)`.This suggests that vegetation is experiencing noticeable stress. With the warm current temperature the VHI is likely to further decrease over the coming days. 
 
 ```{r, fig.cap = paste('Latest swissEO Vegetation Health Index around Bern (dating from', unique(vhi_stats$date), ').')}
 #| label: fig-map-vhi_latest
@@ -764,9 +785,10 @@ vhi_map <- vhi_map |>
 vhi_map
 ```
 
+**Findings**
 
-Error sources such as clouds can potentially lead to anomalous values for certain dates. 
-Note that the above map is automatically generated and has not necessarily been checked visually.
+Extremely stressed vegetation dominates throughout the region. Variability in stress levels should be interpreted with caution. Error sources such as clouds can potentially lead to anomalous values for certain dates.
+
 
 ## Current drought status summary
 
@@ -774,12 +796,11 @@ Taken together, the different indicators paint a consistent picture. Spring and 
 
 This signal is reflected in the satellite-based Vegetation Health Index, which shows widespread moderate vegetation stress around Bern. At the same time, the PCWD is currently as high as it has ever been at this point in the year.
 
-Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress.
+Both indices indicate that the ecosystem is currently in a state of elevated drought stress. The evolution over the coming weeks will largely depend on the weather in the upcoming weeks. Currently, MeteoSwiss predicts warm temperatures and only little precipitation in the form of thunderstroms over the coming days, which will likely further increase drought stress. Drought levels attained this summer are likely among the highest or are record-breaking with respect to previously recorded values since measurements began (1864).
 
 ## Appendix: links for whole Switzerland
 
 Looking beyond the Bern area, below appendices provide further resources on national level for Switzerland.
-
 
 ### Appendix A - Soil water across Switzerland (SwissSMEX and SwissSPOT)
 
