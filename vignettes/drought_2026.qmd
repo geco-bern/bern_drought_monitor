@@ -136,6 +136,7 @@ source(here::here("R", "plot_helper.R"))
 ## Overview
 
 This drought monitor combines several complementary variables to assess the current drought situation with a focus on the region of Bern, Switzerland: 
+
   - Potential cumulative water deficit (derived from local MeteoSchweiz station and from ERA5-Land climate reanalysis).
   - Soil water potential (local measurements by [GECO](https://geco-group.org/), University of Bern)
   - Tree water deficit (local measurements by [GECO](https://geco-group.org/), University of Bern))
