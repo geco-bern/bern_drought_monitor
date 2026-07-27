@@ -169,60 +169,91 @@ find_latest_valid_feature_by_day <- function(start_date = Sys.Date(), days_back 
 }
 
 # ---------------------------
-# 1) Find the latest valid available dataset
+# 1) Find the latest five valid available datasets
 # ---------------------------
-vhi_layer <- "forest"
 
-latest_feature <- find_latest_valid_feature_by_day(
+vhi_layer <- "forest"
+n_dates <- 5
+
+latest_features <- vector("list", n_dates)
+latest_dates <- as.Date(rep(NA, n_dates))
+
+# Neuester gültiger Datensatz
+latest_features[[1]] <- find_latest_valid_feature_by_day(
   start_date = Sys.Date(),
   days_back = 180,
   layer = vhi_layer
 )
-latest_date <- as.Date(item_datetime(latest_feature))
 
-message("Latest valid VHI dataset: ", latest_date)
-
-# 1b) Find the latest three available datasets
-latest_feature_2 <- find_latest_valid_feature_by_day(
-  start_date = latest_date - 1,
-  days_back = 180,
-  layer = vhi_layer
+latest_dates[1] <- as.Date(
+  item_datetime(latest_features[[1]])
 )
-latest_date_2 <- as.Date(item_datetime(latest_feature_2))
-latest_feature_3 <- find_latest_valid_feature_by_day(
-  start_date = latest_date_2 - 1,
-  days_back = 180,
-  layer = vhi_layer
-)
-latest_date_3 <- as.Date(item_datetime(latest_feature_3))
 
+message(
+  "Valid VHI dataset 1 of ",
+  n_dates,
+  ": ",
+  latest_dates[1]
+)
+
+# Vier weitere gültige Datensätze suchen
+for (i in 2:n_dates) {
+  latest_features[[i]] <- find_latest_valid_feature_by_day(
+    start_date = latest_dates[i - 1] - 1,
+    days_back = 180,
+    layer = vhi_layer
+  )
+
+  latest_dates[i] <- as.Date(
+    item_datetime(latest_features[[i]])
+  )
+
+
+  message(
+    "Valid VHI dataset ",
+    i,
+    " of ",
+    n_dates,
+    ": ",
+    latest_dates[i]
+  )
+}
+
+# Keep aliases for code that expects the latest dataset
+latest_feature <- latest_features[[1]]
+latest_date <- latest_dates[1]
 
 # ---------------------------
 # 2) Read remote asset and crop it to the AOI
 # ---------------------------
-latest_href <- pick_tif_asset(latest_feature, layer = vhi_layer)
-latest_crop <- crop_to_aoi_from_url(latest_href)
+latest_crops <- lapply(
+  latest_features,
+  function(feature) {
+    href <- pick_tif_asset(
+      feature,
+      layer = vhi_layer
+    )
 
-latest_href_2 <- pick_tif_asset(latest_feature_2, layer = vhi_layer)
-latest_crop_2 <- crop_to_aoi_from_url(latest_href_2)
-
-latest_href_3 <- pick_tif_asset(latest_feature_3, layer = vhi_layer)
-latest_crop_3 <- crop_to_aoi_from_url(latest_href_3)
+    crop_to_aoi_from_url(href)
+  }
+)
 
 # TODO: create hardcoded swisseo_vhi_bern_plot_data_July16.tif
 
 
 # ---------------------------
-# 4) Process for plotting in vignette
+# 3) Process for plotting in vignette
 # ---------------------------
-raster_stack <- c(latest_crop, latest_crop_2, latest_crop_3)
-time(raster_stack) <- c(latest_date, latest_date_2, latest_date_3)
+raster_stack <- do.call(
+  c,
+  latest_crops
+)
+
+time(raster_stack) <- latest_dates
 
 # VHI auf gültigen Bereich begrenzen
 dim(raster_stack)
 
-
-seq_len(dim(raster_stack)[[3]])
 for (i in seq_len(nlyr(raster_stack))) {
   idx <- raster_stack[[i]] < 0 | raster_stack[[i]] > 100
   raster_stack[[i]][idx] <- NA
@@ -235,20 +266,28 @@ raster_stack_wgs84 <- terra::project(raster_stack, "EPSG:4326", method = "near")
 # 4) Save processed data for vignette
 # ---------------------------
 
+dir.create(
+  here("data-dynamic"),
+  showWarnings = FALSE,
+  recursive = TRUE
+)
 
-dir.create("data-dynamic", showWarnings = FALSE)
-# Save cropped raster stack
+# Save cropped raster stack with five dates
 writeRaster(
   raster_stack_wgs84,
-  here("data-dynamic", paste0("swisseo_vhi_bern_plot_data_3dates.tif")),
+  here(
+    "data-dynamic",
+    "swisseo_vhi_bern_plot_data_5dates.tif"
+  ),
   overwrite = TRUE
 )
 
-# Save summary statistics
+# Save summary statistics for the latest valid dataset only
 plot_df <- raster_to_df(
-  latest_crop,
+  latest_crops[[1]],
   paste0(latest_date, " (latest valid available)")
 )
+
 stats <- plot_df |>
   summarise(
     date = unique(date),
@@ -260,6 +299,9 @@ stats <- plot_df |>
 
 write.csv(
   stats,
-  here("data-dynamic", "swisseo_vhi_bern_stats.csv"),
+  here(
+    "data-dynamic",
+    "swisseo_vhi_bern_stats.csv"
+  ),
   row.names = FALSE
 )
