@@ -11,7 +11,7 @@ source(here("analysis", "01_calc_pcwd.R"))
 
 # GECO-sites:
 if (FALSE) { # NOTE: activate this for automatic update (TODO: automatize all manual steps)
-  source(here("analysis", "03_GECOsites.R")) # TODO: this does not yet exist
+  #source(here("analysis", "03_GECOsites.R")) # TODO: this requires data outside of this repository
 }
 # creates: data/daily_SWP_drakau.csv and daily_TWD_drakau.csv
 
@@ -21,6 +21,6 @@ source(here("analysis", "02_swissEOVHI.R"))
 
 # ERA5-Land:
 if (FALSE) { # NOTE: activate this for automatic update (TODO: automatize all manual steps)
-  source(here("analysis", "04_calc_pcwd_era5land.R"))
+  # source(here("analysis", "04_calc_pcwd_era5land.R")) # TODO: this requires data outside of this repository
 }
 # creates: data/ERA5LandCWD/data_derived_03_....nc

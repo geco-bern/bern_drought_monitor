@@ -18,12 +18,6 @@ output_file <- here("data","Bern_pcwd_daily.csv")
 station_lat <- 46.99
 station_elevation <- 553
 
-dir.create(
-  here("data-dynamic"),
-  showWarnings = FALSE,
-  recursive = TRUE
-)
-
 # Day of year corresponding to December 1
 doy_reset <- yday(ymd("2000-12-01"))
 

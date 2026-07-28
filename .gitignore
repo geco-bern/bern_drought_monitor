@@ -37,8 +37,3 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
-
-
-
-# Temporary data for vignette rendering
-/data-dynamic/

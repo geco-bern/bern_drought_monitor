@@ -168,6 +168,7 @@ With below code the blog can be updated:
 ```
 cd ~/GitHub/geco-bern/drought_switzerland_blog
 Rscript analysis/05_Update_data.R
+git commit -am "Update data $(date +%F)"
 quarto publish vignettes/drought_2026.qmd
 
 # alternatively do it from R:
@@ -193,7 +194,7 @@ The Quarto document automatically generates all figures from the processed datas
 ### Processed data
 
 ```text
-data-dynamic/
+data/
 ```
 
 Examples:
@@ -211,7 +212,7 @@ Rendered Quarto outputs are written to:
 vignettes/
 ```
 
-All figures are generated dynamically during rendering from the processed datasets stored in `data-dynamic/`.
+All figures are generated dynamically during rendering from the processed datasets stored in `data/`.
 
 Outputs may be available as:
 

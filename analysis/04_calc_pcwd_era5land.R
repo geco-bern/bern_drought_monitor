@@ -29,7 +29,6 @@ library(tidync)
 
 # Output folder
 out_dir <- here("data","ERA5LandCWD")
-# out_dir <- here("data-dynamic","ERA5LandCWD") --> not used anymore
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # ---------------------------
