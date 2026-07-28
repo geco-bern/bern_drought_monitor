@@ -39,6 +39,20 @@ vhi_rast_wgs84 <- terra::rast(here(
 vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
 
 # C) Define palette:
+# For lines:
+highlight_colours <- c(
+  "2026" = "#D73027", 
+  "2022" = "#4575B4", 
+  "2018" = "#E69F00", 
+  "2023" = "#009E73",
+  "1947" = "#CC79A7", 
+  "1976" = "#56B4E9", 
+  "2003" = "#F0E442"
+)
+
+highlight_years <- as.integer(names(highlight_colours))
+
+# For raster:
 # Klassenfarben gemäss swissEO
 vhi_cols <- c(
   "#b56a29", # Extremely stressed
@@ -107,18 +121,6 @@ meteo_pcwd_PT <- meteo_pcwd |>
   slice_head(n = -1) |> # drop last line which appears to be set to pcwd_mm = 0
   filter(!is.na(PCWD_PT)) |> # subset years from 2010 on
   mutate(plot_date = make_date(2000, month(date), day(date)))
-
-highlight_colours <- c(
-  "2026" = "#D73027", 
-  "2022" = "#4575B4", 
-  "2018" = "#E69F00", 
-  "2023" = "#009E73",
-  "1947" = "#CC79A7", 
-  "1976" = "#56B4E9", 
-  "2003" = "#F0E442"
-)
-
-highlight_years <- as.integer(names(highlight_colours))
 
 p_pt <- ggplot() +
   geom_line(
@@ -619,8 +621,8 @@ p_twd_blog <- ggplot(
 
   # Landscape position in rows, species in columns
   facet_grid(
-    rows = vars(plot),
-    cols = vars(species),
+    cols = vars(plot),
+    rows = vars(species),
     scales = "fixed"
   ) +
 
