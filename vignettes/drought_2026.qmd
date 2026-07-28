@@ -308,7 +308,7 @@ p_fao
 
 meteo_pcwd_THORNTWAITE <- meteo_pcwd |> 
   slice_head(n = -1) |> # drop last line which appears to be set to pcwd_mm = 0
-  filter(!is.na(PCWD_THORN)) |> # subset years from 2010 on
+  filter(!is.na(PCWD_THORN)) |>
   mutate(plot_date = make_date(2000, month(date), day(date)))
 
 p_thorn <- ggplot() +
