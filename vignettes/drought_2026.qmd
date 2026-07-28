@@ -32,12 +32,6 @@ df_TWD <- read_csv(here("data","daily_TWD_drakau.csv"))
 vhi_rast_wgs84 <- terra::rast(here("data", "swisseo_vhi_bern_plot_data_5dates.tif"))
 vhi_stats      <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
 
-vhi_rast_wgs84 <- terra::rast(here(
-  "data",
-  "swisseo_vhi_bern_plot_data_3dates.tif"
-))
-vhi_stats <- read_csv(here("data", "swisseo_vhi_bern_stats.csv"))
-
 # C) Define palette:
 # For lines:
 highlight_colours <- c(
