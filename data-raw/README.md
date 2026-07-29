@@ -1,0 +1,1 @@
+MeteoSwiss station data variable names explained in `ogd-smn_meta_parameters.csv`.
