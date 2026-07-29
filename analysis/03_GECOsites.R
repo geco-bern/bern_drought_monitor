@@ -82,7 +82,7 @@ df_drakau_swp_daily <- df_drakau_daily |>
 # save csv files daily data from april to october
 write_csv(
   df_drakau_swp_daily,
-  here("data-dynamic", "daily_SWP_drakau.csv"),
+  here("data", "daily_SWP_drakau.csv"),
 )
 
 

@@ -238,8 +238,6 @@ latest_crops <- lapply(
   }
 )
 
-# TODO: create hardcoded swisseo_vhi_bern_plot_data_July16.tif
-
 
 # ---------------------------
 # 3) Process for plotting in vignette
