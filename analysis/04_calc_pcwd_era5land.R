@@ -66,6 +66,7 @@ dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 # ssh ubelix
 # cd /storage/capacity/occr_geco/data_2/archive/era5land_munoz-sabater_2021/data_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf/
 # cd /storage/capacity/occr_geco/data_2/scratch/fbernhard/ERA5Land-T_2000-2026_run2026-07-16_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf/
+# cd /storage/capacity/occr_geco/data_2/scratch/fbernhard/ERA5Land-T_2000-2026_run2026-08-13bbb_derived_03_daily_pcwd.narm_v2-doy-reset_netcdf
 # srun --account=invest --qos=job_icpu-stocker --ntasks=1 --cpus-per-task=8 --mem-per-cpu=8G --job-name="crop_ERA5L_CWD" --time=1:00:00 --pty bash
 # module load netCDF
 # module load CDO

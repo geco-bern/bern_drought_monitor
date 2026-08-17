@@ -343,10 +343,10 @@ cwd_ERA5Land <- terra::rast(
 cwd_ERA5Land_df <- dplyr::bind_rows(
   tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2026_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
   tidync::hyper_tibble(here("data/ERA5LandCWD/data_derived_03_daily_pcwd_v2-doy_2025_r-generated_regionCH.nc")), # or "regionBern.nc" or "regionEUROPE.nc"
-) |> mutate(time = lubridate::ymd(time))
+) |> mutate(time = lubridate::ymd(time)) |> arrange(time)
 
 # plot ERA5-Land map
-date_to_plot <- "2026-07-15"
+date_to_plot <- "2026-08-04"
 raster_to_plot_ERA5LAND_PCWD <- cwd_ERA5Land[[time(cwd_ERA5Land) %in% date_to_plot]]
 
 # Define similar palette to vhi:
