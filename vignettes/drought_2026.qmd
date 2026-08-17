@@ -804,7 +804,7 @@ Looking beyond the Bern area, below appendices provide further resources on nati
 
 ### Appendix A - Soil water across Switzerland (SwissSMEX)
 
-The SwissSMEX and SwissSPOT monitoring networks provide continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through to official monitoring platform:
+The SwissSMEX monitoring network provides continuous observations of soil moisture at multiple depths across Switzerland. Current conditions can be explored through the official monitoring platform:
 
 [Open SwissSMEX Monitoring Dashboard](https://iacweb.ethz.ch/rietholzbach/SwissSMEX/Monitor/individual_stations.html){.btn .btn-primary}
 
