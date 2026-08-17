@@ -542,7 +542,7 @@ p1
 
 **Finding**
 
-The soil has dried out much earlier in 2026 than in 2025. The current levels of the soil water potential (low values indicate dry conditions) are of similar magnitude as the driest values in 2025. However, in 2025, low values were attained much later in the season.
+The soil has dried out much earlier and more strongly in 2026 than in 2025. The current levels of the soil water potential (low values indicate dry conditions) are lower than the driest values in 2025. Also, the low values were attained much earlier in the season.
 
 Interestingly, the mid and especially the low position experience generally less negative soil water potentials than the high position. In other words, the higher above the Aare river, the drier the soil gets over the course of a summer. This may be due to lateral water transport along the hillslope and the influence of the river, leading to shallow groundwater tables in the low position--likely within the reach of tree roots. Tree water use can also be different with soil depth depending on the root distributions. Typically, deeper soil layers remain wetter due to reduced root water uptake. However, in the above measurements the main dry-out of the soil in 2025 and 2026 was similar across all soil depths (except for the position close to the Aare).
 
@@ -709,9 +709,9 @@ p_twd_blog
 
 **Finding**
 
-Tree water deficits are as high or higher than ever recorded in 2025. However, in contrast to 2026, deficits have started rising much earlier. This indicates that water stress is has been affecting trees throughout almost the full growing season this year. In contrast, water stress effects at the high and mid positions were limited to August in 2025. This likely has important negative consequences for the carbon balance and growth of trees in 2026.
+Tree water deficits are as high or higher than ever recorded in 2025. However, in contrast to 2025, deficits have started rising much earlier. This indicates that water stress is has been affecting trees throughout almost the full growing season this year. In contrast, water stress effects at the high and mid positions were limited to August in 2025. This likely has important negative consequences for the carbon balance and growth of trees in 2026.
 
-The low position appears to be almost fully buffered against drought impacts in both years. 
+The low position appears to be better buffered against drought impacts in both years, with the exception of one individual tree.
 
 ## Vegetation Health Index (VHI)
 
