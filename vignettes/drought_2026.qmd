@@ -739,7 +739,7 @@ p_twd_blog +
       ymax = y_max_P, ymin = y_max_P - P,
       fill = year
     ),
-    width = 1, y = NULL, group = NA, show.legend = FALSE
+    width = 1, y = NA, group = NA, show.legend = FALSE
   ) +
   labs(
     title = "Tree water deficit across individual trees",
