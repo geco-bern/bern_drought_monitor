@@ -449,13 +449,11 @@ ggplot(vpd_pcwd_top15, aes(x = mean_PCWD, y = mean_VPDmax)) +
   geom_point(
     data = \(x) filter(x, !year %in% highlight_years),
     colour = "grey45",
-    size = 2.2,
     alpha = 0.8
   ) +
   geom_point(
     data = \(x) filter(x, year %in% highlight_years),
     aes(colour = as.factor(year)),
-    size = 3.2
   ) +
   geom_text(
     data = \(x) filter(x, year %in% highlight_years),
@@ -752,7 +750,7 @@ Im Rahmen derselben Kampagne wie bei den Bodenwasserpotenzialmessungen (siehe ob
 
 ```{r}
 #| label: fig-twd
-#| fig-cap: "Saisonale Dynamik des Baumwasserdefizits an verschiedenen Landschaftspositionen über der Aare in den Jahren 2025 und 2026."
+#| fig-cap: "Saisonale Dynamik des Baumwasserdefizits für Rotbuche und Weisstanne an verschiedenen Landschaftspositionen über der Aare in den Jahren 2025 und 2026."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -924,13 +922,7 @@ p_twd_blog
 
 #### Verringern sommerliche Regenereignisse das Baumwasserdefizit?
 
-Um kurzfristige Veränderungen des Baumwasserdefizits mit Regenfällen zu
-vergleichen, wird der tägliche Niederschlag an der MeteoSchweiz-Station
-Bern-Zollikofen oberhalb des medianen TWD der untersuchten Weisstannen an der
-hohen Position dargestellt. Das Band umfasst den Interquartilsbereich der
-Wiederholungsbäume. Der Stationsniederschlag dient als regionaler Indikator;
-insbesondere bei konvektivem Sommerregen können die Mengen am Waldstandort
-abweichen.
+Um kurzfristige Veränderungen des Baumwasserdefizits mit Regenfällen zu vergleichen, wird unten (@fig-twd-rain) zusätzlich der tägliche Niederschlag an der MeteoSchweiz-Station Bern-Zollikofen dargestellt. Der Stationsniederschlag dient als regionaler Indikator. Insbesondere bei konvektivem Sommerregen können die Mengen am Waldstandort abweichen.
 
 ```{r}
 #| label: fig-twd-rain
@@ -938,7 +930,7 @@ abweichen.
 #| fig-width: 8
 #| fig-height: 7
 
-summer_limits_2026 <- as.Date(c("2026-06-01", "2026-08-13"))
+summer_limits_2026 <- c(as.Date(c("2026-06-01")), lubridate::today())
 
 rain_2026 <- meteo_pcwd |>
   filter(date >= summer_limits_2026[1], date <= summer_limits_2026[2]) |>
@@ -1026,13 +1018,7 @@ Bei der Weisstanne an der hohen Position fallen die wichtigsten Regenperioden
 Anfang Juni (26,8 mm), um den 30. Juni bis 1. Juli (12,3 mm) und vom 14. bis
 16. Juli (14,6 mm) mit deutlichen Rückgängen des medianen TWD zusammen. Die
 kleinen Ereignisse Ende Juli von nur 1–2 mm gehen mit schwächeren, kurzlebigen
-Rückgängen einher; das TWD blieb hoch und stieg kurz darauf erneut an. Die
-Ereignisse führten somit zu einer vorübergehenden Entlastung der
-Stammwasservorräte, stellten aber die niedrigen TWD-Werte vom Juni nicht wieder
-her. Der Niederschlag wurde in Bern-Zollikofen und nicht am Waldstandort
-gemessen. Da das tägliche TWD zudem auf den atmosphärischen Wasserbedarf
-reagiert, ist die zeitliche Übereinstimmung kein Beweis für einen kausalen
-Niederschlagseffekt.
+Rückgängen einher. Das TWD blieb dann hoch. Im allgemeinen stieg das TWD jeweils kurz nach den Regenereignissen rasch erneut an. Diese Ereignisse führten somit zu einer vorübergehenden Entlastung der Stammwasservorräte, stellten aber die niedrigen TWD-Werte vom Juni nicht wieder her.
 :::
 
 #### Steigt das TWD bei sehr trockenem Unterboden schneller an?
@@ -1041,8 +1027,7 @@ Der folgende explorative Vergleich verknüpft jeden positiven täglichen
 TWD-Zuwachs mit dem in 60 cm Tiefe (hohe Position) beziehungsweise 100 cm Tiefe
 (mittlere Position) gemessenen Bodenwasserpotenzial. Der tiefe Sensor an der
 tiefen Position verblieb bei null und wird daher ausgeschlossen. Die Werte
-werden in beschreibende Trockenheitsklassen eingeteilt; diese sind nicht als
-allgemeingültige physiologische Schwellenwerte zu verstehen.
+werden in beschreibende Trockenheitsklassen eingeteilt.
 
 ```{r}
 #| label: fig-twd-increase-deep-soil
@@ -1116,7 +1101,7 @@ ggplot(twd_deep_soil, aes(x = soil_state, y = TWD_increase, fill = soil_state)) 
   coord_cartesian(ylim = c(0, 50)) +
   labs(
     title = "Das TWD steigt bei trockenerem Unterboden schneller an",
-    subtitle = "Zusammengefasste positive Tageszuwächse 2025–2026 von April bis Oktober; hohe und mittlere Position",
+    subtitle = "Positive TWD Tageszuwächse, Apr.-Okt. 2025–2026 von April bis Oktober.",
     x = "Klasse des Bodenwasserpotenzials im Unterboden",
     y = "Täglicher TWD-Zuwachs (µm Tag⁻¹)",
     caption = "Die y-Achse ist bei 50 µm Tag⁻¹ abgeschnitten; in die Boxplots gehen alle Beobachtungen ein."
@@ -1125,25 +1110,7 @@ ggplot(twd_deep_soil, aes(x = soil_state, y = TWD_increase, fill = soil_state)) 
 ```
 
 ::: {.callout-warning title="Befund: Trockenheit im Unterboden"}
-In den zusammengefassten Beobachtungen von 2025 und 2026 waren positive
-tägliche TWD-Zuwächse bei trockenerem Unterboden grösser. Der mediane Zuwachs
-stieg von `r round(twd_deep_stats$median_wet, 1)` µm Tag⁻¹ bei einem
-Bodenwasserpotenzial über −100 kPa auf
-`r round(twd_deep_stats$median_extreme, 1)` µm Tag⁻¹ bei höchstens −1000 kPa.
-Der zusammengefasste Spearman-Zusammenhang betrug
-`r round(twd_deep_stats$rho, 2)`; das negative Vorzeichen bedeutet, dass ein
-stärker negatives Bodenwasserpotenzial mit einer schnelleren TWD-Akkumulation
-verbunden war. Dies ist damit vereinbar, dass ein eingeschränkter Zugang zu
-tiefem Bodenwasser die erneute Entleerung der Stammwasservorräte beschleunigt.
-Es handelt sich jedoch nicht um eine kausale Schätzung, da wiederholte
-Messungen, saisonale Witterung, Baumidentität und Standortunterschiede nicht
-unabhängig voneinander sind.
-:::
-
-::: {.callout-warning title="Befund"}
-An der hohen und mittleren Position begann das mediane TWD im Juli 2026 stark anzusteigen und übertraf sowohl bei der Weisstanne als auch bei der Rotbuche die Maxima von 2025. Die stärkste Reaktion zeigte die Weisstanne an der hohen Position: Dort erreichte das mediane TWD bis zum 13. August rund 322 µm, gegenüber einem Maximum von etwa 176 µm im Jahr 2025. Dies weist an den trockeneren Landschaftspositionen auf eine frühere und deutlich stärkere Entleerung der Stammwasservorräte im Jahr 2026 hin.
-
-Die Bäume an der tiefen Position waren 2026 deutlich weniger betroffen, insbesondere die Rotbuche. Dies stützt die Annahme, dass die Nähe zur Aare den Trockenstress abpuffert. Die Bänder zeigen dennoch beträchtliche Unterschiede zwischen den Individuen; die mediane Reaktion beschreibt daher nicht jeden einzelnen Baum.
+Positive tägliche TWD-Zuwächse waren bei trockenerem Unterboden jeweils grösser. Dies deutet darauf hin, dass ein eingeschränkter Zugang der Bäume zu tiefem Bodenwasser die erneute Entleerung der Stammwasservorräte nach (relativ beschränkten) Regenereignissen beschleunigt. Mit andern Worten: Solange die Niederschlagsmengen nicht ausreichen, um den Unterboden ausreichend zu befeuchten, entspannt sich der Wasserstress an den Bäumen nicht. Das Regenereignis vom 17.8. war mit ca. 20 mm seit anfangs Juni das grösste. Das hat zu einer kurzzeitigen Enspannung des Wasserstress geführt, wie im TWD-Abfall ersichtlich, und sogar den Unterboden in 100 cm Tiefe befeuchtet(mittlere Hangposition, siehe @fig-swp). Allerdings blieb der Unterboden absolut gesehen extrem trocken (≤ −1000 kPa) und es muss damit gerechnet werden, dass sich hohe TWD Werte bei weiter ausbleibendem Regen schnell wieder einstellen. 
 :::
 
 ## Vegetationsgesundheitsindex (VHI)
@@ -1151,11 +1118,11 @@ Die Bäume an der tiefen Position waren 2026 deutlich weniger betroffen, insbeso
 ::: {.callout-note}
 ## Erklärung: Vegetationsgesundheitsindex
 
-Der Vegetationsgesundheitsindex misst die Auswirkungen der Dürre auf die Gesundheit der Vegetation, also auf ihre Begrünung und Aktivität (Transpiration). Der [SwissEO Vegetationsgesundheitsindex (VHI)](https://www.swisstopo.admin.ch/de/satellitenbilder-swisseo-vhi) kombiniert aus Sentinel-2 abgeleitete Beobachtungen des normalisierten differenzierten Vegetationsindex (NDVI) mit Daten zur Landoberflächentemperatur (LST), um den Vegetationsstress abzuschätzen. Der Index reicht von 0 bis 100; niedrigere Werte weisen auf eine weniger gesunde Vegetation und eine höhere Wahrscheinlichkeit dürrebedingter Auswirkungen hin. Die LST bildet die Vegetationsaktivität ab, da Transpiration die Oberfläche kühlt. Eine hohe Landoberflächentemperatur kann daher auf geringe Transpirationsraten und Wasserstress hinweisen. Der Vorteil dieses satellitengestützten Index liegt in seiner flächigen Abdeckung. Nachteilig ist das stärkere Messrauschen, das Zuverlässigkeit und Interpretierbarkeit einschränkt.
+Der Vegetationsgesundheitsindex misst die Auswirkungen der Dürre auf die Gesundheit der Vegetation, also auf ihre Begrünung und Aktivität (Transpiration). Der [SwissEO Vegetationsgesundheitsindex (VHI)](https://www.swisstopo.admin.ch/de/satellitenbilder-swisseo-vhi) kombiniert aus Sentinel-2 abgeleitete Beobachtungen des normalisierten differenzierten Vegetationsindex (NDVI) mit Daten zur Landoberflächentemperatur (LST), um den Vegetationsstress abzuschätzen. Der Index reicht von 0 bis 100; niedrigere Werte weisen auf eine weniger gesunde Vegetation und eine höhere Wahrscheinlichkeit dürrebedingter Auswirkungen hin. Die LST bildet die Vegetationsaktivität ab, da Transpiration die Oberfläche kühlt. Eine hohe Landoberflächentemperatur kann daher auf geringe Transpirationsraten und Wasserstress hinweisen. Der Vorteil dieses satellitengestützten Index liegt in seiner flächigen Abdeckung. Nachteilig ist das stärkere "Messrauschen", das Zuverlässigkeit und Interpretierbarkeit einschränkt.
 
 :::
 
-Die folgende Karte zeigt die neuesten verfügbaren VHI-Daten für die Region Bern (`r vhi_date_de`). Der mediane VHI im Untersuchungsgebiet betrug `r round(vhi_stats$median_vhi, 1)`; die Werte reichten von `r round(vhi_stats$min_vhi, 1)` bis `r round(vhi_stats$max_vhi, 1)`. Dies weist auf einen deutlichen Stress der Vegetation hin.
+Die folgende Karte zeigt die neuesten verfügbaren VHI-Daten für die Region Bern (`r vhi_date_de`). Der mediane VHI im Untersuchungsgebiet betrug `r round(vhi_stats$median_vhi, 1)`; die Werte reichten von `r round(vhi_stats$min_vhi, 1)` bis `r round(vhi_stats$max_vhi, 1)`. Dies weist auf einen deutlichen Stress der Vegetation hin. Allerdings ist der Fehler in den Messungen hier besonders hoch und Regionen mit offenbar geringem Stress (z.B. nahe Orvin, siehe @fig-map-vhi_latest) sind mit Vorsicht zu interpretieren.
 
 ```{r, fig.cap = paste('Neuester swissEO-Vegetationsgesundheitsindex im Raum Bern (Stand:', vhi_date_de, ').')}
 #| label: fig-map-vhi_latest
@@ -1219,15 +1186,15 @@ vhi_map
 ```
 
 ::: {.callout-warning title="Befund"}
-Die neueste verfügbare Karte weist einen regionalen medianen VHI von 19 und einen Mittelwert von 18,3 auf. Ein typisches Pixel fällt damit in die Klasse «stark gestresst». Niedrige VHI-Werte sind weit verbreitet und stimmen mit den Stations- und Feldindikatoren überein. Die gesamte Spannweite von 0 bis 100 zeigt jedoch auch starke räumliche Unterschiede. Einzelne Pixel und Veränderungen von Tag zu Tag sollten vorsichtig interpretiert werden, da Wolken und andere Fehler bei der Datenableitung zu anomalen Werten führen können.
+Die neueste verfügbare Karte weist einen regionalen medianen VHI von 19 und einen Mittelwert von 18,3 auf. Ein typisches Pixel fällt damit in die Klasse «stark gestresst». Niedrige VHI-Werte sind weit verbreitet und stimmen mit den Stations- und Feldindikatoren überein. Die gesamte Spannweite von 0 bis 100 zeigt jedoch auch starke räumliche Unterschiede. Die Wälder am Jurasüdfuss rund um Biel stehen besonders heraus und zeigen grossflächig extrem gestresste Bestände an.
 :::
 
 
 ## Zusammenfassung der aktuellen Dürresituation
 
-Zusammen zeigen die Indikatoren eine aussergewöhnlich schwere Dürre im Jahr 2026 im Raum Bern. Bis zum 17. August hatte das FAO-basierte PCWD jedes frühere Jahresmaximum der Reihe 1981–2026 überschritten, während die Thornthwaite-Schätzung der langen Reihe knapp unter dem Jahresmaximum von 1947 lag. Bodenwasserpotenzial und TWD weisen insbesondere an der hohen und mittleren Waldposition auf einen früher einsetzenden und anhaltenderen Stress als 2025 hin. Der neueste regionale mediane VHI fällt in die Klasse «stark gestresst».
+Zusammen zeigen die Indikatoren eine aussergewöhnlich schwere Dürre im Jahr 2026. Bis zum 17. August hatte das FAO-basierte PCWD jedes frühere Jahresmaximum der Reihe 1981–2026 überschritten. Die Kombination aus trockener Luft und ausgetrockneten Böden macht die Bedingungen im Sommer 2026 besonders gravierend für Pflanzen. Bodenwasserpotenzial und TWD weisen insbesondere an der hier gemessenen hohen und mittleren Waldposition auf einen früher einsetzenden und anhaltenderen Stress als 2025 hin. Der satellitenbasierte Vegetation Health Index (VHI) fällt grossflächig in die Klasse "extrem gestresst".
 
-Sommerliche Regenereignisse führten bei Weisstannen an der hohen Position zu sichtbaren, aber meist kurzlebigen TWD-Rückgängen. Bei extrem trockenem Unterboden akkumulierte das TWD schneller. Dies deutet darauf hin, dass kleine Regenereignisse die unmittelbare Entleerung der Stammwasservorräte verringerten, ohne den tieferen Wasservorrat vollständig aufzufüllen. Die tiefe Landschaftsposition blieb vergleichsweise gut gepuffert. Insgesamt kennzeichnen die atmosphärischen, bodenbezogenen, baumphysiologischen und satellitengestützten Indikatoren das Jahr 2026 übereinstimmend als extremes Dürrejahr, zeigen aber zugleich starke Unterschiede zwischen Landschaftspositionen, Arten und Einzelbäumen.
+Sommerliche Regenereignisse führten an der hohen Position zu sichtbaren, aber meist kurzlebigen TWD-Rückgängen. Bei extrem trockenem Unterboden akkumulierte das TWD schneller. Dies deutet darauf hin, dass kleine Regenereignisse die unmittelbare Entleerung der Stammwasservorräte verringerten, ohne den tieferen Wasservorrat vollständig aufzufüllen. Die tiefe Landschaftsposition blieb vergleichsweise gut gepuffert. Insgesamt kennzeichnen die atmosphärischen, bodenbezogenen, baumphysiologischen und satellitengestützten Indikatoren das Jahr 2026 übereinstimmend als extremes Dürrejahr.
 
 ## Anhang: Links für die gesamte Schweiz
 
