@@ -559,7 +559,7 @@ As part of the same campaign as for the soil water potential measurements (see a
 
 ```{r}
 #| label: fig-twd
-#| fig-cap: "Seasonal dynamics of tree water deficit at different landscape positions (above Aare river) in 2025 and 2026."
+#| fig-cap: "Seasonal dynamics of tree water deficit at different landscape positions (above Aare river) in 2025 and 2026. Precipitation from nearby MeteoSwiss station Bern/Zollikofen is shown for reference."
 #| fig-width: 8
 #| fig-height: 5
 
