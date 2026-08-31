@@ -234,6 +234,12 @@ p_fao_meteoswiss <- ggplot() +
   )
 
 p_fao_meteoswiss
+
+ggsave(
+  here("fig", "pcwd_fao.png"),
+  width = 8,
+  height = 5
+)
 ```
 
 #### PCWD der letzten 162 Jahre
@@ -249,9 +255,18 @@ als die FAO-Referenz-PET von MeteoSchweiz, erweitert den Vergleich jedoch bis
 #| fig-width: 8
 #| fig-height: 5
 
-meteo_pcwd_THORNTWAITE <- meteo_pcwd |> 
+meteo_pcwd_THORNTWAITE <- meteo_pcwd |>
   filter(!is.na(PCWD_THORN)) |>
   mutate(plot_date = make_date(2000, month(date), day(date)))
+
+latest_n <- 30
+meteo_pcwd_THORNTWAITE |>
+  group_by(year) |>
+  summarise(pcwd = max(PCWD_THORN)) |>
+  mutate(latest_period = ifelse(year >= 2026 - (latest_n + 1), TRUE, FALSE)) |>
+  arrange(desc(pcwd)) |>
+  slice(1:latest_n)
+  # summarise(n_latest = sum(latest_period))
 
 p_thorn <- ggplot() +
   geom_line(
@@ -262,27 +277,36 @@ p_thorn <- ggplot() +
     alpha = 0.5
   ) +
   geom_line(
-    data = meteo_pcwd_THORNTWAITE |>  filter(year %in% highlight_years),
+    data = meteo_pcwd_THORNTWAITE |> filter(year %in% highlight_years),
     aes(x = plot_date, y = PCWD_THORN, colour = as.factor(year), group = year),
     linewidth = 0.5
   ) +
   # Maxima beschriften (zuerst hervorgehobene Jahre, dann die fünf grössten übrigen Jahre)
-  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(year %in% highlight_years) |>
+  geom_text(
+    data = meteo_pcwd_THORNTWAITE |>
+      filter(year %in% highlight_years) |>
       group_by(year) |>
       # Nur jährliche Maxima behalten:
       filter(PCWD_THORN == max(PCWD_THORN)),
     aes(x = plot_date, y = PCWD_THORN, colour = as.factor(year), label = year),
-    vjust = -0.1, show.legend = FALSE
+    vjust = -0.1,
+    show.legend = FALSE
   ) +
-  geom_text(data = meteo_pcwd_THORNTWAITE |> filter(!year %in% highlight_years) |>
+  geom_text(
+    data = meteo_pcwd_THORNTWAITE |>
+      filter(!year %in% highlight_years) |>
       group_by(year) |>
       # Nur jährliche Maxima behalten:
       filter(PCWD_THORN == max(PCWD_THORN)) |>
       # Nur Jahre mit den fünf grössten Maxima behalten
-       ungroup() |> arrange(desc(PCWD_THORN)) |> slice(1:5),
+      ungroup() |>
+      arrange(desc(PCWD_THORN)) |>
+      slice(1:5),
     aes(x = plot_date, y = PCWD_THORN, label = year),
-    vjust = -0.1, show.legend = FALSE, color = "grey75"
-  ) + 
+    vjust = -0.1,
+    show.legend = FALSE,
+    color = "grey75"
+  ) +
   scale_colour_manual(
     values = highlight_colours,
     name = "Jahr"
@@ -297,7 +321,10 @@ p_thorn <- ggplot() +
     title = "Potenzielles kumulatives Wasserdefizit",
     subtitle = paste0(
       "Bern-Zollikofen, Thornthwaite-PET (",
-      min(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE), "–", max(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE), ")"
+      min(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE),
+      "–",
+      max(meteo_pcwd_THORNTWAITE$year, na.rm = TRUE),
+      ")"
     )
   ) +
   general_plot_theme +
