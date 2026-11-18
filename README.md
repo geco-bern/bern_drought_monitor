@@ -164,9 +164,19 @@ The document also incorporates summary statistics directly into the text and pro
 
 ## How to Reproduce the Analysis
 
-With below code the blog can be updated:
+The project requires **R 4.6.1**. From a fresh clone, restore the exact package
+versions recorded in `renv.lock` before running the analysis:
+
+```r
+renv::restore()
 ```
-cd ~/GitHub/geco-bern/drought_switzerland_blog
+
+The `.R-version` file allows compatible R version managers and IDEs to select
+R 4.6.1 automatically.
+
+With the code below, the blog can be updated:
+```
+cd ~/GitHub/geco-bern/bern_drought_monitor
 Rscript analysis/05_Update_data.R
 git commit -am "Update data $(date +%F)"
 quarto publish vignettes/drought_2026.qmd
@@ -245,11 +255,12 @@ quarto
 ### Environment management
 
 ```r
-renv::init()
+renv::restore()
 renv::snapshot()
 ```
 
-Include the generated `renv.lock` file in the repository.
+The committed `renv.lock` targets R 4.6.1. Use `renv::restore()` to reproduce
+the environment and `renv::snapshot()` after intentional dependency changes.
 
 ### System dependencies
 
