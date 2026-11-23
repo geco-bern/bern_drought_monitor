@@ -1,0 +1,491 @@
+---
+title: "Field measurements — Drakau"
+author: "GECO Bern"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(here)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(lubridate)
+library(patchwork)
+library(stringr)
+
+input_swp <- here("data", "daily_SWP_drakau.csv")
+input_twd <- here("data", "daily_TWD_drakau.csv")
+if (!file.exists(input_swp) || !file.exists(input_twd)) {
+  stop("Place daily_SWP_drakau.csv and daily_TWD_drakau.csv inside the project's data/ folder. Current root: ", here::here())
+}
+df_SWP <- read_csv(input_swp, show_col_types = FALSE) |> mutate(date = as.Date(date))
+df_TWD <- read_csv(input_twd, show_col_types = FALSE) |> mutate(date = as.Date(date))
+
+highlight_colours <- c("2026" = "#C67858")
+month_labels_de <- c("Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez")
+general_plot_theme <- list(
+  theme_classic(base_size = 13),
+  theme(plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(colour = "grey30", margin = margin(b = 10)),
+        strip.text = element_text(face = "bold", size = 12),
+        strip.background = element_blank(),
+        panel.spacing = grid::unit(1, "lines"),
+        plot.caption = element_text(colour = "grey40", hjust = 0),
+        legend.position = "top")
+)
+```
+
+
+## Soil water potential (SWP)
+
+```{r}
+#| label: fig-swp
+#| fig-cap: "Saisonale Dynamik des Bodenwasserpotenzials an verschiedenen Landschaftspositionen über der Aare und in unterschiedlichen Bodentiefen in den Jahren 2025 und 2026."
+#| fig-width: 8
+#| fig-height: 6.4
+
+df_SWP_plot <- df_SWP |>
+  mutate(
+    year = factor(
+      lubridate::year(date),
+      levels = c(2025, 2026)
+    ),
+
+    # 2025 und 2026 auf dasselbe Referenzjahr abbilden,
+    # damit die saisonalen Verläufe direkt verglichen werden können
+    plot_date = as.Date(
+      sprintf(
+        "2000-%02d-%02d",
+        lubridate::month(date),
+        lubridate::day(date)
+      )
+    ),
+
+    depth = factor(
+      series_height,
+      levels = c(-0.1, -0.4, -0.6, -1),
+      labels = c("10 cm", "40 cm", "60 cm", "100 cm")
+    ),
+
+    # Gewünschte Reihenfolge der Teilgrafiken beibehalten
+    plot = factor(
+      tree_name,
+      levels = c("P3", "P2", "P1", "G1"), labels = c("Hoch","Mittel","Tief", "G1")
+    )
+  ) |>
+  filter(
+    year %in% c("2025", "2026"),
+    plot %in% c("Hoch","Mittel","Tief"),
+    !is.na(SWP_mean),
+    !is.na(depth)
+  )
+
+p1 <- 
+  ggplot(
+    df_SWP_plot,
+    aes(
+      x = plot_date,
+      y = SWP_mean,
+      colour = year,
+    )
+  ) +
+  geom_line(
+    linewidth = 0.7,
+    alpha = 0.9,
+    na.rm = TRUE
+  ) +
+  facet_grid(
+    cols = vars(plot),
+    rows = vars(depth),
+    scales = "fixed",
+    labeller = labeller(depth = label_both,
+                        .default = label_value)
+  ) +
+  scale_colour_manual(
+    values = c(highlight_colours, c("2025" = "darkgrey")),
+    drop = FALSE
+  ) +
+  scale_x_date(
+    date_breaks = "2 month",
+    date_minor_breaks = "1 month",
+    labels = \(x) month_labels_de[lubridate::month(x)],
+    limits = as.Date(c("2000-01-01", "2000-12-31")),
+    expand = expansion(mult = c(0.01, 0.01))
+  ) +
+  scale_y_continuous() + 
+  labs(
+    title = "Saisonale Dynamik des Bodenwasserpotenzials",
+    x = NULL,
+    y = "Bodenwasserpotenzial (kPa)",
+    colour = NULL,
+    caption = paste(
+      "Stärker negative Werte zeigen trockenere Bodenbedingungen an."
+    )
+  ) +
+  general_plot_theme +
+  theme(
+    legend.position = "inside", legend.position.inside = c(0.01,0.01),  legend.justification = c(0,0),
+    legend.direction = "vertical", legend.box = "vertical"
+  )
+
+p1
+```
+
+## Tree water deficit (TWD)
+
+```{r}
+#| label: fig-twd
+#| fig-cap: "Saisonale Dynamik des Baumwasserdefizits für Rotbuche und Weisstanne an verschiedenen Landschaftspositionen über der Aare in den Jahren 2025 und 2026."
+#| fig-width: 8
+#| fig-height: 5
+
+df_TWD_blog <- df_TWD |>
+  mutate(
+    # Jahr für die Farbzuordnung
+    year = factor(
+      lubridate::year(date),
+      levels = c(2025, 2026)
+    ),
+
+    # Beide Jahre auf derselben saisonalen x-Achse darstellen
+    plot_date = as.Date(
+      sprintf(
+        "2000-%02d-%02d",
+        lubridate::month(date),
+        lubridate::day(date)
+      )
+    ),
+
+    # Standortkennung aus dem Baumnamen extrahieren
+    site = stringr::str_sub(tree_name, -2, -1),
+
+    # Beschriftung und Reihenfolge der Landschaftspositionen definieren
+    plot = factor(
+      site,
+      levels = c("P3", "P2", "P1", "G1"),
+      labels = c("Hoch", "Mittel", "Tief", "G1")
+    ),
+
+    # Deutsche Trivialnamen für die Facettenbeschriftung
+    species = factor(
+      tree_genus_species,
+      levels = c(
+        "Abies alba",
+        "Fagus sylvatica"
+      ),
+      labels = c(
+        "Weisstanne",
+        "Rotbuche"
+      )
+    )
+  ) |>
+  filter(
+    year %in% c("2025", "2026"),
+    plot %in% c("Hoch", "Mittel", "Tief"),
+    tree_genus_species %in% c(
+      "Abies alba",
+      "Fagus sylvatica"
+    ),
+    lubridate::month(date) >= 4,
+    lubridate::month(date) <= 10
+  ) |>
+
+  # Einzelne Bäume getrennt halten
+  group_by(
+    plot_date,
+    year,
+    tree_name,
+    plot,
+    species
+  ) |>
+  dplyr::summarise(
+    TWD = mean(TWD_mean, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  filter(
+    is.finite(TWD)
+  )
+
+df_TWD_summary <- df_TWD_blog |>
+  group_by(plot_date, year, plot, species) |>
+  dplyr::summarise(
+    TWD_q25 = quantile(TWD, 0.25, na.rm = TRUE),
+    TWD_q75 = quantile(TWD, 0.75, na.rm = TRUE),
+    TWD = median(TWD, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+p_twd_blog <- ggplot(
+  df_TWD_summary,
+  aes(
+    x = plot_date,
+    y = TWD,
+    colour = year,
+    fill = year,
+    group = year
+  )
+) +
+  geom_ribbon(
+    aes(ymin = TWD_q25, ymax = TWD_q75),
+    colour = NA,
+    alpha = 0.18,
+    na.rm = TRUE
+  ) +
+  geom_line(
+    linewidth = 0.7,
+    na.rm = TRUE
+  ) +
+
+  # Landschaftspositionen in Spalten, Arten in Zeilen
+  facet_grid(
+    cols = vars(plot),
+    rows = vars(species),
+    scales = "fixed"
+  ) +
+
+  scale_colour_manual(
+    values = c(
+      "2025" = "darkgrey",
+      "2026" = highlight_colours[["2026"]]
+    ),
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = c(
+      "2025" = "darkgrey",
+      "2026" = highlight_colours[["2026"]]
+    ),
+    drop = FALSE
+  ) +
+
+  scale_x_date(
+    limits = as.Date(
+      c("2000-04-01", "2000-10-31")
+    ),
+    date_breaks = "1 month",
+    labels = \(x) month_labels_de[lubridate::month(x)],
+    expand = expansion(
+      mult = c(0.01, 0.01)
+    )
+  ) +
+
+  labs(
+    title = "Baumwasserdefizit der untersuchten Bäume",
+    x = NULL,
+    y = "Baumwasserdefizit (\u00b5m)",
+    colour = NULL,
+    fill = NULL,
+    caption = paste(
+      "Linien zeigen tägliche Mediane; Bänder den Interquartilsbereich zwischen den Bäumen.",
+      "Weisstanne entspricht Abies alba; Rotbuche Fagus sylvatica.\n",
+      "Höhere Werte zeigen eine stärkere Entleerung des in den elastischen",
+      "Stammgeweben gespeicherten Wassers an."
+    )
+  ) +
+
+  guides(
+    colour = guide_legend(
+      order = 1
+    ),
+    fill = "none"
+  ) +
+
+  general_plot_theme +
+
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.01, 1.0),
+    legend.justification = c(0, 1),
+    legend.direction = "vertical",
+    legend.box = "vertical"
+  )
+
+
+p_twd_blog
+```
+
+## TWD increase and deep soil water potential
+
+```{r}
+#| label: fig-twd-increase-deep-soil
+#| fig-cap: "Positive tägliche Veränderungen des Baumwasserdefizits bei unterschiedlichen Bodenwasserpotenzialen im Unterboden in den Jahren 2025 und 2026."
+#| fig-width: 8
+#| fig-height: 5
+
+deep_swp_daily <- df_SWP |>
+  mutate(
+    plot = dplyr::recode(tree_name, "P3" = "Hoch", "P2" = "Mittel", "P1" = "Tief")
+  ) |>
+  filter(
+    tree_name %in% c("P3", "P2", "P1"),
+    series_height <= -0.6,
+    SWP_mean < 0
+  ) |>
+  group_by(date, plot) |>
+  dplyr::summarise(deep_SWP = mean(SWP_mean, na.rm = TRUE), .groups = "drop")
+
+twd_deep_soil <- df_TWD |>
+  mutate(
+    plot = dplyr::recode(
+      stringr::str_sub(tree_name, -2, -1),
+      "P3" = "Hoch", "P2" = "Mittel", "P1" = "Tief"
+    )
+  ) |>
+  filter(
+    plot %in% c("Hoch", "Mittel", "Tief"),
+    lubridate::year(date) %in% c(2025, 2026),
+    lubridate::month(date) %in% 4:10
+  ) |>
+  group_by(tree_name) |>
+  arrange(date, .by_group = TRUE) |>
+  mutate(
+    day_gap = as.numeric(date - lag(date)),
+    TWD_increase = TWD_mean - lag(TWD_mean)
+  ) |>
+  ungroup() |>
+  filter(day_gap == 1, TWD_increase > 0) |>
+  inner_join(deep_swp_daily, by = c("date", "plot")) |>
+  mutate(
+    year = factor(lubridate::year(date)),
+    soil_state = factor(
+      case_when(
+        deep_SWP <= -1000 ~ "Extrem trocken\n(≤ −1000 kPa)",
+        deep_SWP <= -100 ~ "Trocken\n(−1000 bis −100 kPa)",
+        TRUE ~ "Relativ feucht\n(> −100 kPa)"
+      ),
+      levels = c(
+        "Relativ feucht\n(> −100 kPa)",
+        "Trocken\n(−1000 bis −100 kPa)",
+        "Extrem trocken\n(≤ −1000 kPa)"
+      )
+    )
+  )
+
+twd_deep_stats <- twd_deep_soil |>
+  dplyr::summarise(
+    rho = cor(deep_SWP, TWD_increase, method = "spearman"),
+    median_wet = median(TWD_increase[deep_SWP > -100], na.rm = TRUE),
+    median_extreme = median(TWD_increase[deep_SWP <= -1000], na.rm = TRUE)
+  )
+
+ggplot(twd_deep_soil, aes(x = soil_state, y = TWD_increase, fill = soil_state)) +
+  geom_boxplot(
+    width = 0.65,
+    outlier.alpha = 0.12,
+    show.legend = FALSE
+  ) +
+  scale_fill_manual(values = c("#fee8c8", "#fdbb84", "#e34a33")) +
+  coord_cartesian(ylim = c(0, 50)) +
+  labs(
+    title = "Das TWD steigt bei trockenerem Unterboden schneller an",
+    subtitle = "Positive TWD Tageszuwächse, Apr.-Okt. 2025–2026 von April bis Oktober.",
+    x = "Klasse des Bodenwasserpotenzials im Unterboden",
+    y = "Täglicher TWD-Zuwachs (µm Tag⁻¹)",
+    caption = "Die y-Achse ist bei 50 µm Tag⁻¹ abgeschnitten; in die Boxplots gehen alle Beobachtungen ein."
+  ) +
+  general_plot_theme
+```
+
+## Rainfall and TWD (optional)
+
+```{r}
+#| label: rainfall-optional
+meteo_file <- here("data", "Bern_pcwd_daily.csv")
+if (file.exists(meteo_file)) {
+  meteo_pcwd <- read_csv(meteo_file, show_col_types = FALSE) |> mutate(date = as.Date(date))
+  
+  summer_limits_2026 <- c(as.Date(c("2026-06-01")), lubridate::today())
+  
+  rain_2026 <- meteo_pcwd |>
+    filter(date >= summer_limits_2026[1], date <= summer_limits_2026[2]) |>
+    select(date, precipitation = P)
+  
+  twd_rain_2026 <- df_TWD |>
+    mutate(
+      site = stringr::str_sub(tree_name, -2, -1),
+      plot = factor(
+        site,
+        levels = c("P3", "P2", "P1"),
+        labels = c("Hoch", "Mittel", "Tief")
+      ),
+      species = factor(
+        tree_genus_species,
+        levels = c("Abies alba", "Fagus sylvatica"),
+        labels = c("Weisstanne", "Rotbuche")
+      )
+    ) |>
+    filter(
+      date >= summer_limits_2026[1],
+      date <= summer_limits_2026[2],
+      plot == "Hoch",
+      species == "Weisstanne",
+      is.finite(TWD_mean)
+    ) |>
+    group_by(date, plot, species) |>
+    dplyr::summarise(
+      TWD = median(TWD_mean, na.rm = TRUE),
+      TWD_q25 = quantile(TWD_mean, 0.25, na.rm = TRUE),
+      TWD_q75 = quantile(TWD_mean, 0.75, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  p_rain_2026 <- ggplot(rain_2026, aes(x = date, y = precipitation)) +
+    geom_col(width = 0.9, fill = "#527B83") +
+    scale_x_date(
+      limits = summer_limits_2026,
+      date_breaks = "1 month",
+      labels = \(x) month_labels_de[lubridate::month(x)],
+      expand = c(0, 0)
+    ) +
+    scale_y_reverse(expand = expansion(mult = c(0.05, 0.1))) +
+    labs(
+      title = "Regenereignisse und Baumwasserdefizit im Sommer 2026",
+      subtitle = "Hohe Position, Weisstanne; Niederschlag an der MeteoSchweiz-Station Bern-Zollikofen",
+      x = NULL,
+      y = "Niederschlag (mm)"
+    ) +
+    general_plot_theme +
+    theme(
+      plot.margin = margin(5.5, 5.5, 0, 5.5)
+    )
+  
+  p_twd_rain_2026 <- ggplot(
+    twd_rain_2026,
+    aes(x = date, y = TWD)
+  ) +
+    geom_ribbon(
+      aes(ymin = TWD_q25, ymax = TWD_q75),
+      fill = "#853F48",
+      alpha = 0.18
+    ) +
+    geom_line(colour = "#853F48", linewidth = 0.65) +
+    scale_x_date(
+      limits = summer_limits_2026,
+      date_breaks = "1 month",
+      labels = \(x) month_labels_de[lubridate::month(x)],
+      expand = c(0, 0)
+    ) +
+    labs(
+      x = NULL,
+      y = "Medianes TWD (µm)",
+      caption = "Die Linie zeigt den täglichen Median; das Band den Interquartilsbereich zwischen den Bäumen."
+    ) +
+    general_plot_theme +
+    theme(plot.margin = margin(0, 5.5, 5.5, 5.5))
+  
+  p_rain_2026 / p_twd_rain_2026 +
+    plot_layout(heights = c(1, 3.2))
+} else {
+  message("Rainfall chart skipped: data/Bern_pcwd_daily.csv not found.")
+}
+```
